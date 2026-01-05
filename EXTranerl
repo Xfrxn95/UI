@@ -1,0 +1,182 @@
+--// Spectra X UI FINAL FIXED
+--// Delta / Mobile Friendly
+
+local TweenService = game:GetService("TweenService")
+
+-- ScreenGui
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "SpectraX"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui
+
+-- Fade + Executing Text
+local function ExecuteWithFade(text)
+	local Overlay = Instance.new("Frame", ScreenGui)
+	Overlay.Size = UDim2.new(1,0,1,0)
+	Overlay.BackgroundColor3 = Color3.fromRGB(0,0,0)
+	Overlay.BackgroundTransparency = 1
+	Overlay.ZIndex = 50
+
+	local Label = Instance.new("TextLabel", Overlay)
+	Label.Size = UDim2.new(1,0,1,0)
+	Label.BackgroundTransparency = 1
+	Label.Text = text
+	Label.Font = Enum.Font.GothamBold
+	Label.TextSize = 22
+	Label.TextColor3 = Color3.fromRGB(200,160,255)
+	Label.ZIndex = 51
+
+	TweenService:Create(Overlay, TweenInfo.new(0.6), {
+		BackgroundTransparency = 0.25
+	}):Play()
+
+	task.wait(0.6)
+	ScreenGui.Enabled = false
+end
+
+-- Main Frame
+local Main = Instance.new("Frame", ScreenGui)
+Main.Size = UDim2.new(0, 500, 0, 280)
+Main.Position = UDim2.new(0.5, -250, 0.5, -140)
+Main.BackgroundColor3 = Color3.fromRGB(18, 18, 22)
+Main.BorderSizePixel = 0
+Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
+
+-- Stroke
+local MainStroke = Instance.new("UIStroke", Main)
+MainStroke.Thickness = 2
+MainStroke.Color = Color3.fromRGB(160, 70, 255)
+
+task.spawn(function()
+	while true do
+		TweenService:Create(MainStroke, TweenInfo.new(1), {Color = Color3.fromRGB(220,140,255)}):Play()
+		task.wait(1)
+		TweenService:Create(MainStroke, TweenInfo.new(1), {Color = Color3.fromRGB(120,0,255)}):Play()
+		task.wait(1)
+	end
+end)
+
+-- Title
+local Title = Instance.new("TextLabel", Main)
+Title.Size = UDim2.new(1,0,0,34)
+Title.BackgroundTransparency = 1
+Title.Text = "Welcome To Spectra X"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 17
+Title.TextColor3 = Color3.fromRGB(210,170,255)
+
+-- Panel Creator
+local function CreatePanel(name, pos)
+	local Frame = Instance.new("Frame", Main)
+	Frame.Size = UDim2.new(0,150,0,200)
+	Frame.Position = pos
+	Frame.BackgroundColor3 = Color3.fromRGB(25,25,30)
+	Frame.BorderSizePixel = 0
+	Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,8)
+
+	local Stroke = Instance.new("UIStroke", Frame)
+	Stroke.Thickness = 1.5
+	Stroke.Color = Color3.fromRGB(170,80,255)
+
+	local Label = Instance.new("TextLabel", Frame)
+	Label.Size = UDim2.new(1,0,0,24)
+	Label.BackgroundTransparency = 1
+	Label.Text = name
+	Label.Font = Enum.Font.GothamBold
+	Label.TextSize = 13
+	Label.TextColor3 = Color3.fromRGB(210,170,255)
+
+	local Scroll = Instance.new("ScrollingFrame", Frame)
+	Scroll.Position = UDim2.new(0,0,0,24)
+	Scroll.Size = UDim2.new(1,0,1,-24)
+	Scroll.AutomaticCanvasSize = Enum.AutomaticSize.Y
+	Scroll.ScrollBarImageTransparency = 0.5
+	Scroll.BackgroundTransparency = 1
+
+	local Padding = Instance.new("UIPadding", Scroll)
+	Padding.PaddingLeft = UDim.new(0,10)
+	Padding.PaddingRight = UDim.new(0,10)
+	Padding.PaddingTop = UDim.new(0,8)
+
+	local Layout = Instance.new("UIListLayout", Scroll)
+	Layout.Padding = UDim.new(0,10)
+	Layout.HorizontalAlignment = Center
+
+	return Scroll
+end
+
+-- Panels
+local Updates = CreatePanel("Updates", UDim2.new(0,10,0,60))
+local Scripts = CreatePanel("Scripts", UDim2.new(0.5,-75,0,60))
+local Info = CreatePanel("Info", UDim2.new(1,-160,0,60))
+
+-- Updates Text
+local UText = Instance.new("TextLabel", Updates)
+UText.Size = UDim2.new(1,0,0,160)
+UText.BackgroundTransparency = 1
+UText.TextWrapped = true
+UText.TextYAlignment = Top
+UText.TextXAlignment = Center
+UText.Font = Enum.Font.Gotham
+UText.TextSize = 11
+UText.TextColor3 = Color3.fromRGB(220,220,220)
+UText.Text = [[
+Hello
+
+Script Updates
+• UI improved
+• Scripts optimized
+• New fade system
+
+Bug Packs Added
+]]
+
+-- Script Buttons (CENTERED)
+local function ScriptButton(name, link)
+	local Btn = Instance.new("TextButton", Scripts)
+	Btn.Size = UDim2.new(0,120,0,32)
+	Btn.Text = name
+	Btn.Font = Enum.Font.GothamBold
+	Btn.TextSize = 12
+	Btn.TextColor3 = Color3.fromRGB(240,220,255)
+	Btn.BackgroundColor3 = Color3.fromRGB(35,35,45)
+	Btn.BorderSizePixel = 0
+	Instance.new("UICorner", Btn).CornerRadius = UDim.new(0,6)
+
+	Btn.MouseButton1Click:Connect(function()
+		ExecuteWithFade("Executing Script...")
+		if link then
+			loadstring(game:HttpGet(link))()
+		end
+	end)
+end
+
+-- ADD YOUR SCRIPTS HERE
+ScriptButton("Elerium", "https://pastebin.com/raw/XXXX")
+ScriptButton("Fluent", "https://pastebin.com/raw/XXXX")
+ScriptButton("Dr-Ray", "https://pastebin.com/raw/XXXX")
+
+-- Info
+local IText = Instance.new("TextLabel", Info)
+IText.Size = UDim2.new(1,0,0,90)
+IText.BackgroundTransparency = 1
+IText.TextWrapped = true
+IText.TextXAlignment = Center
+IText.TextYAlignment = Top
+IText.Font = Enum.Font.Gotham
+IText.TextSize = 11
+IText.TextColor3 = Color3.fromRGB(220,220,220)
+IText.Text = "Join Discord Server\nOfficial Future Updates"
+
+local Discord = Instance.new("TextButton", Info)
+Discord.Size = UDim2.new(0,120,0,32)
+Discord.Text = "Discord"
+Discord.Font = Enum.Font.GothamBold
+Discord.TextSize = 12
+Discord.TextColor3 = Color3.fromRGB(255,255,255)
+Discord.BackgroundColor3 = Color3.fromRGB(130,70,255)
+Instance.new("UICorner", Discord).CornerRadius = UDim.new(0,6)
+
+Discord.MouseButton1Click:Connect(function()
+	setclipboard("https://discord.gg/TUINVITE")
+end)

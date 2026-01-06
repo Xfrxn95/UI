@@ -86,7 +86,7 @@ library = loadstring(game:HttpGet(
 
 local window = library:AddWindow(title, {
     main_color = Color3.fromRGB(27, 6, 87),
-    min_size = Vector2.new(600, 800),
+    min_size = Vector2.new(590, 800),
     can_resize = true,
 })
 

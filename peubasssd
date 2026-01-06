@@ -1,6 +1,8 @@
 local Players = game:GetService("Players")
 local VirtualUser = game:GetService("VirtualUser")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local VIM = game:GetService("VirtualInputManager")
+local LP = Players.LocalPlayer
 
 local player = Players.LocalPlayer
 
@@ -91,7 +93,305 @@ local window = library:AddWindow(title, {
 })
 
 local HomeTab = window:AddTab("Home")
+
+HomeTab:AddLabel("╭──────────────────────────╮")
+HomeTab:AddLabel("    Welcome To Spextra X")
+HomeTab:AddLabel("╰──────────────────────────╯")
+HomeTab:AddLabel("")
+
+HomeTab:AddLabel("Script Made By")
+HomeTab:AddLabel("")
+
+HomeTab:AddLabel("Sherya (Isabella)")
+HomeTab:AddLabel("")
+
+HomeTab:AddLabel("Instagram : sheryaluck")
+HomeTab:AddLabel("Tik tok : xvisherys")
+HomeTab:AddLabel("Discord : isabella_hrz")
+HomeTab:AddLabel("Roblox : MissSherya")
+HomeTab:AddLabel("")
+
+HomeTab:AddLabel("Thanks for using the script")
+HomeTab:AddLabel("Errors to discord server")
+HomeTab:AddLabel("")
+
+HomeTab:AddButton("Servidor Discord", function()
+    setclipboard("https://discord.gg/zYrg2qPjTp")
+end)
+
 local MainTab = window:AddTab("Main")
+
+local BrawlFolder = MainTab:AddFolder("  Automatically Join Brawls")
+
+getgenv().godModeBrawl = false
+getgenv().autoWinBrawl = false
+getgenv().autoJoinBrawl = false
+
+-- FUNCTIONS
+local function getChar()
+    return LP.Character
+end
+
+local function equipPunch()
+    if not getgenv().autoWinBrawl then return end
+    local char = getChar()
+    if not char then return end
+    if char:FindFirstChild("Punch") then return end
+
+    for _, tool in pairs(LP.Backpack:GetChildren()) do
+        if tool:IsA("Tool") and tool.Name == "Punch" then
+            tool.Parent = char
+            break
+        end
+    end
+end
+
+local function isReady()
+    local char = getChar()
+    local hum = char and char:FindFirstChild("Humanoid")
+    return hum and hum.Health > 0 and (char:FindFirstChild("LeftHand") or char:FindFirstChild("RightHand"))
+end
+
+local function validTarget(plr)
+    if plr == LP or not plr.Character then return false end
+    local hum = plr.Character:FindFirstChild("Humanoid")
+    return hum and hum.Health > 0 and plr.Character:FindFirstChild("HumanoidRootPart")
+end
+
+local function touch(part1, part2)
+    pcall(function()
+        firetouchinterest(part1, part2, 0)
+        task.wait()
+        firetouchinterest(part1, part2, 1)
+    end)
+end
+
+
+BrawlFolder:AddSwitch("God Mode Brawl", function(state)
+    getgenv().godModeBrawl = state
+    if not state then return end
+
+    task.spawn(function()
+        while getgenv().godModeBrawl do
+            RS.rEvents.brawlEvent:FireServer("joinBrawl")
+            task.wait()
+        end
+    end)
+end)
+
+
+BrawlFolder:AddSwitch("Auto Win Brawls", function(state)
+    getgenv().autoWinBrawl = state
+    if not state then return end
+
+    task.spawn(function()
+        while getgenv().autoWinBrawl do
+            if LP.PlayerGui.gameGui.brawlJoinLabel.Visible then
+                RS.rEvents.brawlEvent:FireServer("joinBrawl")
+                LP.PlayerGui.gameGui.brawlJoinLabel.Visible = false
+            end
+            task.wait(0.5)
+        end
+    end)
+
+    task.spawn(function()
+        while getgenv().autoWinBrawl do
+            equipPunch()
+            task.wait(0.5)
+        end
+    end)
+
+    task.spawn(function()
+        while getgenv().autoWinBrawl do
+            if isReady() and RS.brawlInProgress.Value then
+                pcall(function()
+                    LP.muscleEvent:FireServer("punch", "leftHand")
+                    LP.muscleEvent:FireServer("punch", "rightHand")
+                end)
+            end
+            task.wait(0.1)
+        end
+    end)
+
+    task.spawn(function()
+        while getgenv().autoWinBrawl do
+            if isReady() and RS.brawlInProgress.Value then
+                local char = getChar()
+                local lh, rh = char.LeftHand, char.RightHand
+
+                for _, plr in pairs(Players:GetPlayers()) do
+                    if validTarget(plr) then
+                        local root = plr.Character.HumanoidRootPart
+                        if lh then touch(root, lh) end
+                        if rh then touch(root, rh) end
+                    end
+                end
+            end
+            task.wait(0.05)
+        end
+    end)
+end)
+
+BrawlFolder:AddSwitch("Auto Join Brawls", function(state)
+    getgenv().autoJoinBrawl = state
+    if not state then return end
+
+    task.spawn(function()
+        while getgenv().autoJoinBrawl do
+            pcall(function()
+                if LP.PlayerGui.gameGui.brawlJoinLabel.Visible then
+                    RS.rEvents.brawlEvent:FireServer("joinBrawl")
+                    LP.PlayerGui.gameGui.brawlJoinLabel.Visible = false
+                end
+            end)
+            task.wait(0.5)
+        end
+    end)
+end)
+
+getgenv().working = false
+
+local jungleGymFolder = MainTab:AddFolder("  Jungle Gym")
+
+local function pressE()
+    VIM:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    VIM:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().working do
+        LP.muscleEvent:FireServer("rep")
+        task.wait()
+    end
+end
+
+local function startGym(cf)
+    local char = LP.Character
+    if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+
+    char.HumanoidRootPart.CFrame = cf
+    task.wait(0.1)
+    pressE()
+    task.spawn(autoLift)
+end
+
+jungleGymFolder:AddSwitch("Jungle Bench Press", function(state)
+    getgenv().working = state
+    if state then
+        startGym(CFrame.new(-8173, 64, 1898))
+    end
+end)
+
+jungleGymFolder:AddSwitch("Jungle Squat", function(state)
+    getgenv().working = state
+    if state then
+        startGym(CFrame.new(-8352, 34, 2878))
+    end
+end)
+
+jungleGymFolder:AddSwitch("Jungle Pull Ups", function(state)
+    getgenv().working = state
+    if state then
+        startGym(CFrame.new(-8666, 34, 2070))
+    end
+end)
+
+jungleGymFolder:AddSwitch("Jungle Boulder", function(state)
+    getgenv().working = state
+    if state then
+        startGym(CFrame.new(-8801, 38, 2594))
+    end
+end)
+
+local farmGymsFolder = MainTab:AddFolder("  Gyms")
+
+local workoutPositions = {
+    ["Bench Press"] = {
+        ["Eternal Gym"] = CFrame.new(-7176.19, 45.39, -1106.31),
+        ["Legend Gym"] = CFrame.new(4111.91, 1020.46, -3799.97),
+        ["Muscle King Gym"] = CFrame.new(-8590.06, 46.01, -6043.34)
+    },
+    ["Squat"] = {
+        ["Eternal Gym"] = CFrame.new(-7176.19, 45.39, -1106.31),
+        ["Legend Gym"] = CFrame.new(4304.99, 987.82, -4124.23),
+        ["Muscle King Gym"] = CFrame.new(-8940.12, 13.16, -5699.13)
+    },
+    ["Deadlift"] = {
+        ["Eternal Gym"] = CFrame.new(-7176.19, 45.39, -1106.31),
+        ["Legend Gym"] = CFrame.new(4304.99, 987.82, -4124.23),
+        ["Muscle King Gym"] = CFrame.new(-8940.12, 13.16, -5699.13)
+    },
+    ["Pull Up"] = {
+        ["Eternal Gym"] = CFrame.new(-7176.19, 45.39, -1106.31),
+        ["Legend Gym"] = CFrame.new(4304.99, 987.82, -4124.23),
+        ["Muscle King Gym"] = CFrame.new(-8940.12, 13.16, -5699.13)
+    }
+}
+
+local workoutTypes = { "Bench Press", "Squat", "Deadlift", "Pull Up" }
+local gymLocations = { "Eternal Gym", "Legend Gym", "Muscle King Gym" }
+
+getgenv().workingGym = false
+local gymToggles = {}
+
+local function pressE()
+    VIM:SendKeyEvent(true, "E", false, game)
+    task.wait(0.1)
+    VIM:SendKeyEvent(false, "E", false, game)
+end
+
+local function autoLift()
+    while getgenv().workingGym do
+        LP.muscleEvent:FireServer("rep")
+        task.wait()
+    end
+end
+
+local function teleportAndStart(cf)
+    local char = LP.Character
+    if not (char and char:FindFirstChild("HumanoidRootPart")) then return end
+
+    char.HumanoidRootPart.CFrame = cf
+    task.wait(0.15)
+    pressE()
+    task.spawn(autoLift)
+end
+
+for _, workoutType in ipairs(workoutTypes) do
+    local cleanName = string.gsub(workoutType, " ", "")
+    _G["selected" .. cleanName .. "Gym"] = gymLocations[1]
+
+    local dropdown = farmGymsFolder:AddDropdown(workoutType .. " - Gym", function(v)
+        _G["selected" .. cleanName .. "Gym"] = v
+    end)
+
+    for _, gym in ipairs(gymLocations) do
+        dropdown:Add(gym)
+    end
+
+    local toggle = farmGymsFolder:AddSwitch(workoutType, function(state)
+        getgenv().workingGym = state
+
+        if not state then return end
+
+        for k, t in pairs(gymToggles) do
+            if k ~= workoutType then
+                t:Set(false)
+            end
+        end
+
+        local selectedGym = _G["selected" .. cleanName .. "Gym"]
+        local cf = workoutPositions[workoutType][selectedGym]
+
+        if cf then
+            teleportAndStart(cf)
+        end
+    end)
+
+    gymToggles[workoutType] = toggle
+end
+
 local FarmTab = window:AddTab("Farm")
 local PacksTab = window:AddTab("Packs")
 local StatsTab = window:AddTab("Stats")

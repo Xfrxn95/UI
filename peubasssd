@@ -10,6 +10,9 @@ local BlacklistedUsers = {
     "Honnydezz_z",
     "itsBAJAMILIONcat",
     "HonnyDezz_11",
+    "PR_inmortal",
+    "F3RNO0O00000",
+    "xXLXGHTBRINGERXx",
 }
 
 local BlacklistedPrefixes = {
@@ -93,8 +96,8 @@ local FarmTab = window:AddTab("Farm")
 local PacksTab = window:AddTab("Packs")
 local StatsTab = window:AddTab("Stats")
 local MiscTab = window:AddTab("Misc")
-local CrystalsTab = window:AddTab("Crystals")
-local CalculatorTab = window:AddTab("Calculator")
+local PetsTab = window:AddTab("Pets")
+local DataTab = window:AddTab("Data")
 local GiftTab = window:AddTab("Gift")
 local KillerTab = window:AddTab("Killer")
 local ExtrasTab = window:AddTab("Extras")

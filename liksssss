@@ -1,0 +1,71 @@
+local function findURLs(text)
+    local urls = {}
+    for url in string.gmatch(text, "https?://[^%s\"'<>]+") do
+        table.insert(urls, url)
+    end
+    for url in string.gmatch(text, "www%.[^%s\"'<>]+") do
+        table.insert(urls, url)
+    end
+    return urls
+end
+
+local oldload = load
+load = function(chunk, ...)
+    if type(chunk) == "string" then
+        local urls = findURLs(chunk)
+        if #urls > 0 then
+            warn("=== LINKS DETECTADOS EN LOAD ===")
+            for _, url in ipairs(urls) do
+                warn(url)
+            end
+        end
+    end
+    return oldload(chunk, ...)
+end
+
+local oldloadstring = loadstring
+loadstring = function(chunk, ...)
+    if type(chunk) == "string" then
+        local urls = findURLs(chunk)
+        if #urls > 0 then
+            warn("=== LINKS DETECTADOS EN LOADSTRING ===")
+            for _, url in ipairs(urls) do
+                warn(url)
+            end
+        end
+    end
+    return oldloadstring(chunk, ...)
+end
+
+local oldHttpGet = game.HttpGet
+game.HttpGet = function(self, url, ...)
+    warn("=== HTTP GET ===")
+    warn(url)
+    return oldHttpGet(self, url, ...)
+end
+
+local oldHttpPost = game.HttpPost
+if oldHttpPost then
+    game.HttpPost = function(self, url, ...)
+        warn("=== HTTP POST ===")
+        warn(url)
+        return oldHttpPost(self, url, ...)
+    end
+end
+
+local HttpService = game:GetService("HttpService")
+local oldGetAsync = HttpService.GetAsync
+HttpService.GetAsync = function(self, url, ...)
+    warn("=== HttpService:GetAsync ===")
+    warn(url)
+    return oldGetAsync(self, url, ...)
+end
+
+local oldPostAsync = HttpService.PostAsync
+HttpService.PostAsync = function(self, url, ...)
+    warn("=== HttpService:PostAsync ===")
+    warn(url)
+    return oldPostAsync(self, url, ...)
+end
+
+warn("DETECTOR ACTIVADO - Ejecuta tu script ahora")

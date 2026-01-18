@@ -1,71 +1,291 @@
-local function findURLs(text)
-    local urls = {}
-    for url in string.gmatch(text, "https?://[^%s\"'<>]+") do
-        table.insert(urls, url)
-    end
-    for url in string.gmatch(text, "www%.[^%s\"'<>]+") do
-        table.insert(urls, url)
-    end
-    return urls
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+
+local displayName = player.DisplayName
+if not displayName or displayName == "" then
+    displayName = player.Name
 end
 
-local oldload = load
-load = function(chunk, ...)
-    if type(chunk) == "string" then
-        local urls = findURLs(chunk)
-        if #urls > 0 then
-            warn("=== LINKS DETECTADOS EN LOAD ===")
-            for _, url in ipairs(urls) do
-                warn(url)
+local title = ("Sherya Script Private | Bienvenida %s"):format(displayName)
+
+library = loadstring(game:HttpGet("https://raw.githubusercontent.com/CoronaBlanca/Lxbrxrys/refs/heads/main/Xlxrxxm"))()
+
+local window = library:AddWindow(title, {
+    main_color = Color3.fromRGB(250, 140, 227),
+    min_size = Vector2.new(750, 800),
+    can_resize = true,
+})
+
+local pets = window:AddTab("Pets")
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+pets:AddSwitch("Auto Buy Ultimates", function(bool)
+    _G.AutoUpgradeUltimate = bool
+    
+    if bool then
+        if selectedUltimate == "" then
+            print("Please select an ultimate first!")
+            return
+        end
+        
+        print("Auto upgrade ultimate started for: " .. selectedUltimate)
+        spawn(function()
+            while _G.AutoUpgradeUltimate and selectedUltimate ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.ultimatesRemote:InvokeServer(
+                    "upgradeUltimate",
+                    selectedUltimate
+                )
+                print("Upgraded ultimate: " .. selectedUltimate)
+                task.wait(1)
             end
+        end)
+    else
+        print("Auto comprar ultimates")
+    end
+end)
+
+-- === OPEN CRYSTALS SECTION ===
+pets:AddLabel("=== Open Crystals ===")
+
+local crystalsList = {
+    "Blue Crystal",
+    "Green Crystal",
+    "Frost Crystal",
+    "Mythical Crystal",
+    "Inferno Crystal",
+    "Legends Crystal",
+    "Muscle Elite Crystal",
+    "Galaxy Oracle Crystal",
+    "Jungle Crystal"
+}
+
+local selectedCrystal = ""
+
+local crystalDropdown = pets:AddDropdown("Select Crystal", function(text)
+    selectedCrystal = text
+    print("Crystal selected: " .. text)
+end)
+
+for _, crystal in ipairs(crystalsList) do
+    crystalDropdown:Add(crystal)
+end
+
+pets:AddSwitch("Auto Open Crystal", function(bool)
+    _G.AutoOpenCrystal = bool
+    
+    if bool then
+        if selectedCrystal == "" then
+            print("Please select a crystal first!")
+            return
+        end
+        
+        print("Auto open crystal started for: " .. selectedCrystal)
+        spawn(function()
+            while _G.AutoOpenCrystal and selectedCrystal ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.openCrystalRemote:InvokeServer(selectedCrystal)
+                print("Opened crystal: " .. selectedCrystal)
+                task.wait(0.5)
+            end
+        end)
+    else
+        print("Auto open crystal stopped")
+    end
+end)
+
+-- === SELL PETS/AURAS SECTION ===
+pets:AddLabel("=== Sell Pets & Auras ===")
+
+local selectedSellPet = ""
+local selectedSellAura = ""
+
+local sellPetDropdown = pets:AddDropdown("Select Pet to Sell", function(text)
+    selectedSellPet = text:match("^(.-)%s*%(") or text
+    print("Pet to sell selected: " .. selectedSellPet)
+end)
+
+-- Add all pets to sell dropdown
+sellPetDropdown:Add("Blue Birdie (Basic)")
+sellPetDropdown:Add("Orange Hedgehog (Basic)")
+sellPetDropdown:Add("Red Kitty (Basic)")
+sellPetDropdown:Add("Blue Bunny (Basic)")
+sellPetDropdown:Add("Silver Dog (Basic)")
+sellPetDropdown:Add("Dark Vampy (Advanced)")
+sellPetDropdown:Add("Dark Golem (Advanced)")
+sellPetDropdown:Add("Green Butterfly (Advanced)")
+sellPetDropdown:Add("Yellow Butterfly (Advanced)")
+sellPetDropdown:Add("Crimson Falcon (Rare)")
+sellPetDropdown:Add("Purple Dragon (Rare)")
+sellPetDropdown:Add("Orange Pegasus (Rare)")
+sellPetDropdown:Add("Purple Falcon (Rare)")
+sellPetDropdown:Add("Red Dragon (Rare)")
+sellPetDropdown:Add("White Pegasus (Rare)")
+sellPetDropdown:Add("Blue Pheonix (Epic)")
+sellPetDropdown:Add("Golden Pheonix (Epic)")
+sellPetDropdown:Add("Infernal Dragon (Unique)")
+sellPetDropdown:Add("Ultra Birdie (Unique)")
+
+local sellAuraDropdown = pets:AddDropdown("Select Aura to Sell", function(text)
+    selectedSellAura = text:match("^(.-)%s*%(") or text
+    print("Aura to sell selected: " .. selectedSellAura)
+end)
+
+sellAuraDropdown:Add("Blue Aura (Basic)")
+sellAuraDropdown:Add("Green Aura (Basic)")
+sellAuraDropdown:Add("Purple Aura (Basic)")
+sellAuraDropdown:Add("Red Aura (Basic)")
+sellAuraDropdown:Add("Yellow Aura (Basic)")
+sellAuraDropdown:Add("Ultra Inferno (Rare)")
+sellAuraDropdown:Add("Azure Tundra (Epic)")
+sellAuraDropdown:Add("Grand Supernova (Epic)")
+sellAuraDropdown:Add("Muscle King (Unique)")
+
+pets:AddSwitch("Auto Sell Pets", function(bool)
+    _G.AutoSellPet = bool
+    
+    if bool then
+        if selectedSellPet == "" then
+            print("Please select a pet to sell first!")
+            return
+        end
+        
+        print("Auto sell pet started for: " .. selectedSellPet)
+        spawn(function()
+            while _G.AutoSellPet and selectedSellPet ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.sellPetEvent:FireServer(selectedSellPet)
+                print("Sold pet: " .. selectedSellPet)
+                task.wait(0.5)
+            end
+        end)
+    else
+        print("Auto sell pet stopped")
+    end
+end)
+
+pets:AddSwitch("Auto Sell Auras", function(bool)
+    _G.AutoSellAura = bool
+    
+    if bool then
+        if selectedSellAura == "" then
+            print("Please select an aura to sell first!")
+            return
+        end
+        
+        print("Auto sell aura started for: " .. selectedSellAura)
+        spawn(function()
+            while _G.AutoSellAura and selectedSellAura ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.sellPetEvent:FireServer(selectedSellAura)
+                print("Sold aura: " .. selectedSellAura)
+                task.wait(0.5)
+            end
+        end)
+    else
+        print("Auto sell aura stopped")
+    end
+end)
+
+-- === PET EVOLUTION SECTION ===
+pets:AddLabel("=== Pet Evolution ===")
+
+local selectedEvolvePet = ""
+
+local evolvePetDropdown = pets:AddDropdown("Select Pet to Evolve", function(text)
+    selectedEvolvePet = text:match("^(.-)%s*%(") or text
+    print("Pet to evolve selected: " .. selectedEvolvePet)
+end)
+
+-- Add all pets to evolve dropdown
+evolvePetDropdown:Add("Blue Birdie (Basic)")
+evolvePetDropdown:Add("Orange Hedgehog (Basic)")
+evolvePetDropdown:Add("Red Kitty (Basic)")
+evolvePetDropdown:Add("Blue Bunny (Basic)")
+evolvePetDropdown:Add("Silver Dog (Basic)")
+evolvePetDropdown:Add("Dark Vampy (Advanced)")
+evolvePetDropdown:Add("Dark Golem (Advanced)")
+evolvePetDropdown:Add("Green Butterfly (Advanced)")
+evolvePetDropdown:Add("Yellow Butterfly (Advanced)")
+evolvePetDropdown:Add("Crimson Falcon (Rare)")
+evolvePetDropdown:Add("Purple Dragon (Rare)")
+evolvePetDropdown:Add("Orange Pegasus (Rare)")
+
+pets:AddSwitch("Auto Evolve Pet", function(bool)
+    _G.AutoEvolvePet = bool
+    
+    if bool then
+        if selectedEvolvePet == "" then
+            print("Please select a pet to evolve first!")
+            return
+        end
+        
+        print("Auto evolve pet started for: " .. selectedEvolvePet)
+        spawn(function()
+            while _G.AutoEvolvePet and selectedEvolvePet ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.petEvolveEvent:FireServer(selectedEvolvePet)
+                print("Evolved pet: " .. selectedEvolvePet)
+                task.wait(1)
+            end
+        end)
+    else
+        print("Auto evolve pet stopped")
+    end
+end)
+
+-- === TRADING SECTION ===
+pets:AddLabel("=== Trading System ===")
+
+local selectedTradePlayer = ""
+
+local function getPlayersForDropdown()
+    local playersList = {}
+    for _, plr in ipairs(Players:GetPlayers()) do
+        if plr ~= player then
+            local displayInfo = plr.DisplayName .. " (@" .. plr.Name .. ")"
+            table.insert(playersList, {display = displayInfo, name = plr.Name})
         end
     end
-    return oldload(chunk, ...)
+    return playersList
 end
 
-local oldloadstring = loadstring
-loadstring = function(chunk, ...)
-    if type(chunk) == "string" then
-        local urls = findURLs(chunk)
-        if #urls > 0 then
-            warn("=== LINKS DETECTADOS EN LOADSTRING ===")
-            for _, url in ipairs(urls) do
-                warn(url)
-            end
+local tradePlayerDropdown = pets:AddDropdown("Select Player to Trade", function(text)
+    -- Extract username from display text
+    local username = text:match("@(.-)%)") or text
+    selectedTradePlayer = username
+    print("Player selected for trading: " .. username)
+end)
+
+-- Populate with current players
+local playersList = getPlayersForDropdown()
+for _, playerInfo in ipairs(playersList) do
+    tradePlayerDropdown:Add(playerInfo.display)
+end
+
+pets:AddButton("Refresh Players List", function()
+    tradePlayerDropdown:Clear()
+    local updatedPlayers = getPlayersForDropdown()
+    for _, playerInfo in ipairs(updatedPlayers) do
+        tradePlayerDropdown:Add(playerInfo.display)
+    end
+    print("Players list refreshed!")
+end)
+
+pets:AddSwitch("Auto Send Trade Request", function(bool)
+    _G.AutoTrade = bool
+    
+    if bool then
+        if selectedTradePlayer == "" then
+            print("Please select a player to trade with first!")
+            return
         end
+        
+        print("Auto trade started with: " .. selectedTradePlayer)
+        spawn(function()
+            while _G.AutoTrade and selectedTradePlayer ~= "" do
+                game:GetService("ReplicatedStorage").rEvents.tradingEvent:FireServer("sendRequest", selectedTradePlayer)
+                print("Trade request sent to: " .. selectedTradePlayer)
+                task.wait(5)
+            end
+        end)
+    else
+        print("Auto trade stopped")
     end
-    return oldloadstring(chunk, ...)
-end
-
-local oldHttpGet = game.HttpGet
-game.HttpGet = function(self, url, ...)
-    warn("=== HTTP GET ===")
-    warn(url)
-    return oldHttpGet(self, url, ...)
-end
-
-local oldHttpPost = game.HttpPost
-if oldHttpPost then
-    game.HttpPost = function(self, url, ...)
-        warn("=== HTTP POST ===")
-        warn(url)
-        return oldHttpPost(self, url, ...)
-    end
-end
-
-local HttpService = game:GetService("HttpService")
-local oldGetAsync = HttpService.GetAsync
-HttpService.GetAsync = function(self, url, ...)
-    warn("=== HttpService:GetAsync ===")
-    warn(url)
-    return oldGetAsync(self, url, ...)
-end
-
-local oldPostAsync = HttpService.PostAsync
-HttpService.PostAsync = function(self, url, ...)
-    warn("=== HttpService:PostAsync ===")
-    warn(url)
-    return oldPostAsync(self, url, ...)
-end
-
-warn("DETECTOR ACTIVADO - Ejecuta tu script ahora")
+end)
